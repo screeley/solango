@@ -21,3 +21,33 @@ Just a running list of things that suck. Feel free to add your own.
         
    That sucks. Look at: django.contrib.admin.sites.register
 
+* Unit Tests. Poor showing here, none exist. 
+
+* Advanced Search. Create a `AdvancedSearchForm` that is aware of facetable attributes so the user can limit their search.
+
+* Document range queries. see the `Solr Query Syntax <http://wiki.apache.org/solr/SolrQuerySyntax>`_
+
+* Handle Unicode better. See::
+
+    path:/search/bää/,
+
+    File "/home/screeley/webapps/django/lib/python2.5/django/core/handlers/base.py", line 86, in get_response
+    response = callback(request, *callback_args, **callback_kwargs)
+
+    File "/home/screeley/webapps/django/rumination/solango/views.py", line 36, in select
+    paginator = SearchPaginator(params, request)
+
+    File "/home/screeley/webapps/django/rumination/solango/paginator.py", line 44, in __init__
+    self.results = connection.select(params)
+
+    File "/home/screeley/webapps/django/rumination/solango/solr/connection.py", line 177, in select
+    print query.url
+
+    File "/home/screeley/webapps/django/rumination/solango/solr/query.py", line 204, in url
+    query = urllib.urlencode(params)
+
+    File "/usr/local/lib/python2.5/urllib.py", line 1250, in urlencode
+    v = quote_plus(str(v))
+
+    UnicodeEncodeError: 'ascii' codec can't encode characters in position 1-2: ordinal not in range(128)
+
