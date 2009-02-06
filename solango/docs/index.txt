@@ -14,8 +14,12 @@ During that process I broke a lot of things, but also made it a lot enhancements
 to the best of our ability, outlining features and :ref:`things <fixme>` that could be improved. Don't expect perfection. 
 Expect a great starting point that needs to be improved and nurtured. 
 
-We are always looking for ways to improve this project, so log issues in the `Google Code Project <http://code.google.com/p/django-solr-search/issues/list>`_, 
-find us on the #django irc channel nicks `screeley` and `jdolan` or send me email.
+We are always looking for ways to improve this project, so for questions or suggestions you can use one of the following tools.
+
+* Log issues in the `Google Code Project <http://code.google.com/p/django-solr-search/issues/list>`_. 
+* Ask questions to the `Google Group <http://groups.google.com/group/django-solr>`_. (overkill?)
+* Find us on the #django irc channel. Our nicks are `screeley` and `jdolan`.
+* `Contact <http://www.screeley.com/contact/>`_ me directly.
 
 Getting Started
 ===============
