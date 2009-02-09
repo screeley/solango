@@ -67,7 +67,13 @@ class Command(NoArgsCommand):
                 f = open(path, 'w')
                 f.write(create_schema_xml())
                 f.close()
-                print "Successfully created schema.xml in/at: %s" % path
+                print """
+Successfully created schema.xml in/at: %s
+
+******************************************************************************
+* Warning : You must restart Solr in order for these changes to take affect. *
+******************************************************************************
+                """ % path
         
         if flush_solr:
             if SOLR_DATA_DIR:
