@@ -58,7 +58,7 @@ class Command(NoArgsCommand):
                 raise CommandError("Path does not exist: %s" % path)
             
             if not os.path.isfile(path):
-                path = os.path.join(schema_path, 'schema.xml')
+                path = os.path.join(path, 'schema.xml')
             
             from solango.utils import create_schema_xml
             if solr_fields:
