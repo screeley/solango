@@ -66,6 +66,6 @@
 	</div>
 	
 	<script type='text/javascript'>
-	function doSearch(form){var url="/search/"+form.elements[0].value+"/";	window.location=url;return false;}
+	function doSearch(form){var url="{% url solango_search %}"+form.elements[0].value+"/";	window.location=url;return false;}
 	</script>
 {% endblock %}
