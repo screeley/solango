@@ -139,6 +139,7 @@ you are going to have to take a harder look at the schema.xml, but for now, it w
     --flush               Will remove the data directory from Solr.
     --reindex             Will reindex Solr from the registry.
     --schema              Will create the schema.xml in SOLR_SCHEMA_PATH or in the --path.
+    --start               Start solr running java -jar start.jar
     --path=SCHEMA_PATH    Tells Solango where to create config file.
     
 Try `./manange.py solr --fields`. It prints out the fields and the copyFields. So for our example it would be::
@@ -181,15 +182,16 @@ or use `solango`::
 Lets go back and change some settings so that we can make it easier to develop with Solr and Django commands. 
 Find the Solr settings and change them to::
     
-    SOLR_ROOT = '/path/to/apache-solr-1.3.0/example/solr/'
-    SOLR_SCHEMA_PATH = SOLR_ROOT + 'conf/schema.xml'
-    SOLR_DATA_DIR = SOLR_ROOT + 'data'
+    SOLR_ROOT = '/path/to/apache-solr-1.3.0/example/'
+    SOLR_SCHEMA_PATH = SOLR_ROOT + 'solr/conf/schema.xml'
+    SOLR_DATA_DIR = SOLR_ROOT + 'solr/data'
 
 Now we can run:
 
 * `./manage.py solr --schema` to update the schema.xml
 * `./manage.py solr --flush` to delete the data directory in the example project
 * `./manage.py solr --reindex` to add all objects with a Search Document to Solr
+* `./manage.py solr --start` will start Solr running `java -jar start.jar` as a subprocess
 
 To add all my entries to Solr I issued `./manage.py solr --reindex`. Now that I have a searchable Solr 
 instance let's try and return some data::

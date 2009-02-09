@@ -6,23 +6,22 @@ from django.core.management.base import BaseCommand, CommandError, NoArgsCommand
 from optparse import make_option
 import os
 import shutil
+import subprocess
 
 class Command(NoArgsCommand):
     option_list = BaseCommand.option_list + (
         make_option('--flush', dest='flush_solr', action='store_true', default=False,
-            help='Will remove the data directory from Solr.'),
-                                             
+            help='Will remove the data directory from Solr.'),                      
         make_option('--reindex', dest='index_solr', action='store_true', default=False,
             help='Will reindex Solr from the registry.'),
-            
         make_option('--schema', dest='solr_schema', action='store_true', default=False,
             help='Will create the schema.xml in SOLR_SCHEMA_PATH or in the --path.'),
-        
         make_option('--path', dest='schema_path', default=False,
             help='Tells Solango where to create config file.'),
-       
         make_option('--fields', dest='solr_fields', action='store_true', default=False,
             help='Prints out the fields the schema.xml will create'),
+        make_option('--start', dest='start_solr', action='store_true', default=False,
+            help='Start solr running java -jar start.jar'),
     )
     args = ''
 
@@ -37,12 +36,14 @@ class Command(NoArgsCommand):
         schema_path = options.get('schema_path')
         flush_solr =options.get('flush_solr')
         solr_fields =options.get('solr_fields')
-        
+        start_solr = options.get('start_solr')
+         
         from django.conf import settings
         
         #### SOLR
         SOLR_SCHEMA_PATH = getattr(settings, 'SOLR_SCHEMA_PATH', None)
         SOLR_DATA_DIR = getattr(settings, 'SOLR_DATA_DIR', None)
+        SOLR_ROOT = getattr(settings, 'SOLR_ROOT', None)
                 
         if schema or solr_fields:
             #Get the Path
@@ -92,9 +93,27 @@ Successfully created schema.xml in/at: %s
         if index_solr:
             import solango
             if not solango.connection.is_available():
-                raise CommandError("Solr connection is not avalible")
+                raise CommandError("Solr connection is not available")
             
             from solango.utils import reindex
             print "Starting to reindex Solr"
             reindex()
             print "Finished the reindex of Solr"
+        
+        if start_solr:
+            # Make sure the `SOLR_ROOT` and `start.jar` exist.
+            if not SOLR_ROOT:
+                raise CommandError("SOLR_ROOT is not specified")
+            start_jar_path = os.path.join(SOLR_ROOT, 'start.jar')
+            if not os.path.exists(start_jar_path):
+                raise CommandError("No Solr start.jar found at %s" % start_jar_path)
+            
+            # Start Solr subprocess
+            print "Starting Solr process. CTL-C to exit."
+            os.chdir(SOLR_ROOT)
+            try:
+                subprocess.call(["java", "-jar", "start.jar"])
+            except KeyboardInterrupt:
+                # Throws nasty errors if we don't catch the keyboard interrupt.
+                pass
+            print "Solr process has been interrupted"
