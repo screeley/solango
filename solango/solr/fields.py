@@ -153,6 +153,7 @@ class IntegerField(Field):
 
 class BooleanField(Field):
     dynamic_suffix = "b"
+    type = "boolean"
     
     def clean(self):
         if self.value == 'true':
@@ -210,16 +211,19 @@ class ModelField(CharField):
 ## May not be too useful, but the dynamic fields exist in solr, so use'em
 class FloatField(Field):
     dynamic_suffix = "f"
+    type = "float"
     
     def clean(self):
         self.value = float(self.value)
 
 class DoubleField(Field):
     dynamic_suffix = "d"
+    type = "double"
     
     def clean(self):
         self.value = float(self.value)
         
 class LongField(Field):
     dynamic_suffix = "l"
+    type = "long"
 
