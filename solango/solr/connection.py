@@ -174,7 +174,6 @@ class SearchWrapper(object):
         else:
             query = Query(*args, **kwargs)
         
-        print query.url
         # Submits the response to solr
         response = self.issue_request(self.select_url + "?" + query.url)
     

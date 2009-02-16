@@ -155,7 +155,7 @@ class Query(dict):
         """
         params = []
         if args:
-            params = list(args[0].items())
+            params = [(key, value) for key, value in args[0].items() if value]
         params.extend(kwargs.items()) 
         
         if not params:

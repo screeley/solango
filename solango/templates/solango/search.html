@@ -34,14 +34,16 @@
 {% endblock%}
 
 {% block content %}
-	<form action="" method="GET" onsubmit="return doSearch(this);">
-		<input name='q' type="text" value="{{q}}">
-		<input type="submit">
+	<form action="." method="GET">
+		<ul>
+		  {{form.as_ul}}
+		</ul>
+		<input type='submit', value='Search'>
 	</form>
 	
 	<div>
-	{% if q and not paginator.results.documents %}
-	No results found for <em>{{q}}</em>. Please modify your search.
+	{% if form.data.q and not paginator.results.documents %}
+	No results found for <em>{{form.data.q}}</em>. Please modify your search.
 	{% endif %}
 	
 	{% for doc in paginator.results.documents %}
@@ -65,7 +67,4 @@
 	{% endif %}
 	</div>
 	
-	<script type='text/javascript'>
-	function doSearch(form){var url="{% url solango_search %}"+form.elements[0].value+"/";	window.location=url;return false;}
-	</script>
 {% endblock %}
