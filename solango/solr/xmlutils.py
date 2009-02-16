@@ -3,6 +3,8 @@
 #
 
 from xml.dom import Node
+from  datetime import datetime
+from time import strptime
 
 """
 An extension to core.xmlutils, providing Solr-specific parsing facilities.  By
@@ -22,13 +24,21 @@ def get_list(node):
             elif c.localName == "int":
                 ret.append(get_int(c))
             elif c.localName == "date":
-                ret.append(c)
+                ret.append(get_date(c))
             elif c.localName == "arr":
                 ret.append(get_list(c))
             elif c.localName == "lst":
                 ret.append(get_dictionary(c))
             elif c.localName == "doc":
                 ret.append(get_dictionary(c))
+            elif c.localName == "float":
+                ret.append(get_float(c))
+            elif c.localName == "bool":
+                ret.append(get_bool(c))
+            elif c.localName == "double":
+                ret.append(get_float(c))
+            elif c.localName == "long":
+                ret.append(get_long(c))
     
     return ret       
 
@@ -48,13 +58,21 @@ def get_dictionary(node):
             elif c.localName == "int":
                 ret[name] = get_int(c)
             elif c.localName == "date":
-                ret[name] = get_unicode(c)
+                ret[name] = get_date(c)
             elif c.localName == "arr":
                 ret[name] = get_list(c)
             elif c.localName == "lst":
                 ret[name] = get_dictionary(c)
             elif c.localName == "doc":
                 ret[name] = get_dictionary(c)
+            elif c.localName == "float":
+                ret[name] = get_float(c)
+            elif c.localName == "bool":
+                ret[name] = get_bool(c)
+            elif c.localName == "double":
+                ret[name] = get_float(c)
+            elif c.localName == "long":
+                ret[name] = get_long(c)
     
     return ret
 
@@ -86,6 +104,29 @@ def get_float(node):
     """
     return float(get_unicode(node))
 
+def get_long(node):
+    """
+    Parses the specified text Node into an float.
+    """
+    return long(get_unicode(node))
+
+def get_bool(node):
+    """
+    Parses the specified text Node into an bool.
+    """
+    value = get_unicode(node);
+    if value == 'true':
+        return True
+    else:
+        return False
+
+def get_date(node):
+    """
+    Parses the specified text Node into an datetime object.
+    """
+    value = get_unicode(node);
+    return datetime(*strptime(value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
+    
 def get_attribute(node, name):
     """
     Returns the value of the Node Attr with the specified name.

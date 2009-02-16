@@ -143,7 +143,6 @@ class SearchWrapper(object):
         try:
             res = urllib2.urlopen(req).read()
         except StandardError, e:
-            print str(e)
             logger.error(e)
         return res
     

@@ -108,14 +108,18 @@ class DateField(Field):
     type = "date"
     
     def clean(self):
-        self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
+        if isinstance(self.value, datetime):
+            self.value = self.value.date()
+        elif isinstance(self.value, unicode):
+            self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
     
 class DateTimeField(Field):
     dynamic_suffix = "dt"
     type = "date"
 
     def clean(self):
-        self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6])
+        if isinstance(self.value, unicode):
+            self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6])
 
 class CharField(Field):
     dynamic_suffix = "s"
@@ -149,17 +153,19 @@ class IntegerField(Field):
     type = "integer"
     
     def clean(self):
-        self.value = int(self.value)
+        if not isinstance(self.value, int):
+            self.value = int(self.value)
 
 class BooleanField(Field):
     dynamic_suffix = "b"
     type = "boolean"
     
     def clean(self):
-        if self.value == 'true':
-            self.value = True
-        elif self.value == 'false':
-            self.value = False
+        if not isinstance(self.value, bool):
+            if self.value == 'true':
+                self.value = True
+            elif self.value == 'false':
+                self.value = False
             
 class UrlField(CharField):
     
@@ -208,22 +214,26 @@ class ModelField(CharField):
         self.value = get_model_key(value_or_model)
         return unicode(self)
 
-## May not be too useful, but the dynamic fields exist in solr, so use'em
 class FloatField(Field):
     dynamic_suffix = "f"
     type = "float"
     
     def clean(self):
-        self.value = float(self.value)
+        if not isinstance(self.value, float):
+            self.value = float(self.value)
 
 class DoubleField(Field):
     dynamic_suffix = "d"
     type = "double"
     
     def clean(self):
-        self.value = float(self.value)
+        if not isinstance(self.value, float):
+            self.value = float(self.value)
         
 class LongField(Field):
     dynamic_suffix = "l"
     type = "long"
 
+    def clean(self):
+        if not isinstance(self.value, long):
+            self.value = long(self.value)
