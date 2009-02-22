@@ -1,0 +1,22 @@
+.. _code-search_form:
+
+===========
+Search Form
+===========
+
+The `solango` search form is very simple on purpose but it's very easily extended. it 
+looks like so::
+
+    class SearchForm(forms.Form):
+        q = forms.CharField(required=False)
+    
+        def clean_q(self):
+            q = self.cleaned_data.get("q")
+	        if not q:
+	            raise forms.ValidationError("You cannot query for an empty string")
+	        return q
+
+This is nice, but an advanced search form would be much more useful. One isn't included
+with `solango` because there is no one way to do it. So here's an example of adding
+an `advanced search form <http://yml-blog.blogspot.com/2009/02/django-full-text-search-with-solango_21.html>`_
+at Yann Malet's Blog. I'm waiting for him to write something up for the docs. :)

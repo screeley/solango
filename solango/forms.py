@@ -13,6 +13,6 @@ class SearchForm(forms.Form):
     
     def clean_q(self):
         q = self.cleaned_data.get("q")
-        if q == '':
+        if not q:
             raise forms.ValidationError("You cannot query for an empty string")
         return q

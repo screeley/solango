@@ -12,6 +12,7 @@ Code
     query
     facet
     highlighting
+    search_form
     
     connection
     settings
