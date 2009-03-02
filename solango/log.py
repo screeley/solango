@@ -6,7 +6,7 @@
 This module provides unified logging via the logging module.
 """
 import logging
-import settings
+from django.conf import settings
 
 class LogManager:
     """
