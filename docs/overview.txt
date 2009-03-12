@@ -7,7 +7,7 @@ Overview
 How it got Started
 ===================
 This project has been in the works for awhile now. It started out with the original code written 
-by Jay Dolan for a top 20 newspaper site. Readers where complaining that they were never able to find 
+by Jay Dolan for `The Washington Times <http://www.washingtontimes.com>`_. Readers where complaining that they were never able to find 
 relevant content and they weren't given the tools to narrow down their search. With some of our 
 past experiences with Solr it seemed like the obvious choice for this type of enterprise search concept.
 

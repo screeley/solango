@@ -8,11 +8,11 @@ Source
 ======
 There are no stable releases at this point, so just grab the source from Google code::
 
-	svn checkout https://django-solr-search.googlecode.com/svn/trunk/ django-solr-search 
+	svn checkout http://django-solr-search.googlecode.com/svn/trunk/ django-solr-search 
 
-This includes the example project and docs, if you just want the `solango` module use:: 
+This includes the docs, if you just want the `solango` module use:: 
 
-	svn checkout https://django-solr-search.googlecode.com/svn/trunk/solango solango
+	svn checkout http://django-solr-search.googlecode.com/svn/trunk/solango solango
 	
 As with any module make sure you place it somewhere on your python path or in your app. 
 

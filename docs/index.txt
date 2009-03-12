@@ -9,7 +9,7 @@ Django Solr Documentation
 Introduction
 ============
 The purpose of this project is to allow developers to quickly integrate Solr search with any Django application. 
-It was originally built for a top 20 newspaper site on Django .91 and has been upgraded to function with Django 1.0. 
+It was originally built for the `The Washington Times <http://www.washingtontimes.com>`_ on Django .91 and has been upgraded to function with Django 1.0. 
 During that process I broke a lot of things, but also made it a lot enhancements. We've tried to document the code 
 to the best of our ability, outlining features and :ref:`things <fixme>` that could be improved. Don't expect perfection. 
 Expect a great starting point that needs to be improved and nurtured. 
