@@ -186,12 +186,12 @@ Find the Solr settings and change them to::
     SOLR_SCHEMA_PATH = SOLR_ROOT + 'solr/conf/schema.xml'
     SOLR_DATA_DIR = SOLR_ROOT + 'solr/data'
 
-Now we can run:
+Now we can run::
 
-* `./manage.py solr --schema` to update the schema.xml
-* `./manage.py solr --flush` to delete the data directory in the example project
-* `./manage.py solr --reindex` to add all objects with a Search Document to Solr
-* `./manage.py solr --start` will start Solr running `java -jar start.jar` as a subprocess
+    ./manage.py solr --schema   # will update the schema.xml
+    ./manage.py solr --flush    # will delete the data directory in the example project
+    ./manage.py solr --reindex  # will add all objects with a Search Document to Solr
+    ./manage.py solr --start    # will start Solr running `java -jar start.jar` as a subprocess
 
 To add all my entries to Solr I issued `./manage.py solr --reindex`. Now that I have a searchable Solr 
 instance let's try and return some data::
