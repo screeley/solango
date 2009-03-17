@@ -7,7 +7,8 @@ Will handle the base wrapper.
 
 """
 from django.db.models.loading import get_model
-from django.conf import settings 
+from solango import settings
+
 
 #Helper Functions for getting and setting models
 #The type field sets the value as app_label__module_name
