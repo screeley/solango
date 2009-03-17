@@ -3,8 +3,9 @@
 #
 
 from solango.solr import xmlutils
-from django.conf import settings
+from solango import settings
 import re
+
 class FacetValue(object):
     """
     An abstraction for a unique facet value count, returned from Solr.  This

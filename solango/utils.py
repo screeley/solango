@@ -2,7 +2,7 @@
 # Copyright 2008 Optaros, Inc.
 #
 import urllib
-from django.conf import settings
+from solango import settings
 
 def get_base_url(request, exclude=[]):
     """
@@ -111,6 +111,7 @@ def get_facets_links(request, results):
 
 def create_schema_xml(raw=False):
     import solango
+    from solango.settings import SOLR_DEFAULT_OPERATOR
     from django.template.loader import render_to_string
     fields = {}
     
@@ -134,7 +135,7 @@ def create_schema_xml(raw=False):
         print '######## COPY FIELDS ######## \n'
         print copy_doc
     else:
-        return render_to_string('solango/schema.xml', {'fields': doc, "copy_fields"  : copy_doc })
+        return render_to_string('solango/schema.xml', {'fields': doc, "copy_fields"  : copy_doc, 'default_operator': SOLR_DEFAULT_OPERATOR})
 
 
 def reindex():

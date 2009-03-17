@@ -21,7 +21,7 @@ from solango.solr.query import Query
 """
 from solango.solr import utils
 from solango.solr.utils import CleverDict
-from django.conf import settings
+from solango import settings
 import urllib
 
 
@@ -124,6 +124,7 @@ class Query(dict):
         self.fl = []
         self.start = 0
         self.rows = 10
+        self.op = settings.SOLR_DEFAULT_OPERATOR
         self.clean(*args, **kwargs)
 
     #So we can do url.url
@@ -193,6 +194,8 @@ class Query(dict):
                 q = True
             elif key == 'sort':
                 params.append( ('sort', ' '.join(value)), )
+            elif key == 'op':
+                params.append( ('q.op', value), )
             elif isinstance(value, list):
                 params.append( (key, ', '.join([x for x in value])), )
             else:

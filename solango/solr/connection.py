@@ -5,7 +5,7 @@
 from datetime import datetime, timedelta
 import urllib2
 
-from django.conf import settings
+from solango import settings
 from solango.log import logger
 from solango.solr import results
 from solango.solr.query import Query

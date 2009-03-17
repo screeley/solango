@@ -6,7 +6,8 @@ import re
 from  datetime import datetime
 from time import strptime
 from django.utils.encoding import smart_unicode
-from django.conf import settings
+from django.conf import settings as django_settings
+from solango import settings
 from solango.solr import get_model_key
 from solango.solr import utils
 
@@ -201,7 +202,7 @@ class SiteField(IntegerField):
         super(SiteField, self).__init__( *args, **kwargs)
 
     def transform(self, value_or_model):
-        self.value = settings.SITE_ID
+        self.value = django_settings.SITE_ID
         return unicode(self)
 
 class ModelField(CharField):

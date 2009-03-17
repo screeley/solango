@@ -6,7 +6,8 @@
 This module provides unified logging via the logging module.
 """
 import logging
-from django.conf import settings
+import logging.config
+from solango.settings import LOGGING_CONF
 
 class LogManager:
     """
@@ -16,24 +17,8 @@ class LogManager:
         """
         Instantiate the default logger.
         """
-        self.logger = logging.getLogger(globals()['__name__'])
-        self.logger.setLevel(getattr(logging, settings.LOG_LEVEL))
-        
-        formatter = logging.Formatter(settings.LOG_FORMAT)
-        
-        file_handler = logging.FileHandler(settings.LOG_FILENAME)
-        file_handler.setFormatter(formatter)
-        
-        self.logger.addHandler(file_handler)
+        logging.config.fileConfig(LOGGING_CONF)
+        self.logger = logging.getLogger('solango')
     
-    def get_levels(self):
-        """
-        Returns a dictionary associating names to logging levels.
-        """
-        return {
-            'DEBUG': logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING,
-            'ERROR': logging.ERROR, 'CRITICAL': logging.CRITICAL
-        }
-
 log_manager = LogManager()
 logger = log_manager.logger

@@ -1,7 +1,8 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
-from django.conf import settings
+# django_settings so when we do  solango import settings we don't get confused
+from django.conf import settings as django_settings
 from django.db.models import signals
 from django.db.models.base import ModelBase
 
@@ -67,7 +68,7 @@ def register(model_or_iterable, search_document=None):
         signals.post_save.connect(post_save, model)
         signals.post_delete.connect(post_delete, model)
 
-for a in settings.INSTALLED_APPS:
+for a in django_settings.INSTALLED_APPS:
     try:
         """
         This will call all the fun things in the search documents

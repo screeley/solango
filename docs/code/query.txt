@@ -4,6 +4,9 @@
 Query
 =====
 
+Introduction
+============
+
 Query is a helper function that is used to create Solr query string. It's 
 basically just a dict, but we make it aware of how it should handle certain
 keys.
@@ -19,18 +22,21 @@ a dictionary. Simple example::
      'fl': [],
      'fq': [],
      'hl.fl': u'text',
+     'op': u'OR',
      'q': ['django', 'model:coltrane_entry']],
      'rows': u'10',
      'sort': [],
      'start': u'0'}
     >>> q.url
     'rows=10&facet.field=model&facet.field=author&q=django+AND+model%3Acoltrane_entry
-    &start=0&hl.fl=text&hl.fragsize=200&facet=true&hl=true'
+    &start=0&hl.fl=text&hl.fragsize=200&q.op=OR&facet=true&hl=true'
     
 If you notice q is a list. It assumes that anything that isn't a default query
 param is a search params. So in the url we join all the search parameters by ANDing
 them together.
 
+Facet
+=====
 Facet params start with `facet` and the full list of options
 can be found on the `Solr Simple Facet Parameters <http://wiki.apache.org/solr/SimpleFacetParameters>`_.
 page
@@ -57,8 +63,38 @@ query or set the attribute.::
      
 This is done by using a util data structure we have affectionately named `CleverDict`.
 
+Highlighting
+============
+
 Highlighting params work the same way and  the full list of options
 can be found on the `Solr Highlighting Parameters <http://wiki.apache.org/solr/HighlightingParameters>`_.
 page
 
 Not every option may be supported. 
+
+Operator
+========
+By default Solr uses OR to join all the terms within any query, so q="John Smith" is searched as q="John OR Smith". 
+There are a couple of ways to fix this, you can set it in the `schema.xml` so every time a search is made it defaults
+to AND. You can set it by setting `SOLR_DEFAULT_OPERATOR` in your settings.py file like so::
+
+    SOLR_DEFAULT_OPERATOR = 'AND'
+
+The other way is through the query syntax::
+ 
+    >>> from solango.solr.query import Query
+    >>> q = Query(q='django development', op='AND')
+    >>> q.url
+    'rows=10&facet.field=model&facet.field=author&q=django+development&start=0&hl.fl=text&hl.fragsize=200&q.op=AND&facet=true&hl=true'
+    
+    # Select using AND. 
+    >>> import solango
+    >>> r = solango.connection.select(q)
+    >>> r.count
+    9
+    
+    # Select using OR. We get more results.
+    >>> q = Query(q='django development', op='OR')
+    >>> r = solango.connection.select(q)
+    >>> r.count
+    14

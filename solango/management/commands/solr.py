@@ -38,7 +38,7 @@ class Command(NoArgsCommand):
         solr_fields =options.get('solr_fields')
         start_solr = options.get('start_solr')
          
-        from django.conf import settings
+        from solango import settings
         
         #### SOLR
         SOLR_SCHEMA_PATH = getattr(settings, 'SOLR_SCHEMA_PATH', None)

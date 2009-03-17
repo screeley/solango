@@ -6,7 +6,7 @@ from xml.dom import minidom
 from solango.solr import xmlutils
 from solango.solr.facet import Facet
 from solango.log import logger
-from django.conf import settings 
+from solango import settings 
 from solango import registry
 import urllib
 

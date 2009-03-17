@@ -6,51 +6,48 @@ Settings
 
 Here are all the setting options with comments on how they are used::
 
-    # Default Search URLS. 
-    SEARCH_UPDATE_URL = "http://localhost:8983/solr/update"
-    SEARCH_SELECT_URL = "http://localhost:8983/solr/select"
-    SEARCH_PING_URLS = ["http://localhost:8983/solr/admin/ping",]
+    from django.conf import settings
+
+    ### Search-specific settings.
     
-    # SOLR Testing urls. If the Solr instance is on the same box set these
-    # too the the Solr istance so you can run `manage.py solr --schema` and `--flush`
-    # to regenerate the schema and drop the data directory 
-    SOLR_ROOT = None
-    SOLR_SCHEMA_PATH = None
-    SOLR_DATA_DIR = None
+    SEARCH_UPDATE_URL = getattr(settings, "SEARCH_UPDATE_URL", "http://localhost:8983/solr/update")
+    SEARCH_SELECT_URL = getattr(settings, "SEARCH_SELECT_URL", "http://localhost:8983/solr/select")
+    SEARCH_PING_URLS =  getattr(settings, "SEARCH_PING_URLS", ["http://localhost:8983/solr/admin/ping",])
     
-    # Default Sorting criteria
-    SEARCH_SORT_PARAMS = {
+    #### SOLR
+    SOLR_ROOT = getattr(settings,"SOLR_ROOT", None)
+    SOLR_SCHEMA_PATH = getattr(settings,"SOLR_SCHEMA_PATH", None)
+    SOLR_DATA_DIR = getattr(settings,"SOLR_DATA_DIR", None)
+    
+    #### Default Query Operator
+    SOLR_DEFAULT_OPERATOR = getattr(settings, "SOLR_DEFAULT_OPERATOR", "OR")
+    
+    ### Default Sorting criteria
+    SEARCH_SORT_PARAMS = getattr(settings, "SEARCH_SORT_PARAMS", {
             # "field direction": "anchor" The anchor for display purposes
             "score desc": "Relevance" 
-    }
+    })
     
-    # Default Facet Settings. See http://wiki.apache.org/solr/SimpleFacetParameters 
-    # for more options 
-    SEARCH_FACET_PARAMS = [
+    ### Default Facet Settings
+    SEARCH_FACET_PARAMS =  getattr(settings, "SEARCH_FACET_PARAMS", [
         ("facet", "true"),             # Basic faceting
         ("facet.field", "model"),      # Facet by model
-    ]
+    ])
     
-    #Default Highlighting Settings. See http://wiki.apache.org/solr/HighlightingParameters
-    # for more options
-    SEARCH_HL_PARAMS = [
+    SEARCH_HL_PARAMS = getattr(settings, "SEARCH_HL_PARAMS" ,[
         ("hl", "true"),      # basic highlighting
         ("hl.fl", "text"),   # What field to highlight
-    ]
+    ])
     
     # Lucene Special Characters
     # + - && || ! ( ) { } [ ] ^ " ~ * ? : \
-    SEARCH_SEPARATOR = "__"
-    # Not used, but will be.
-    FACET_SEPARATOR = ";;"
+    SEARCH_SEPARATOR = getattr(settings, "SEARCH_SEPARATOR", "__")
+    
+    FACET_SEPARATOR = getattr(settings, "FACET_SEPARATOR", ";;")
     
     ########## LOGGING ##############
     
     # The filename to which the logger will write.
-    LOG_FILENAME = None
-    
-    # The log level: DEBUG, INFO, WARNING, ERROR, CRITICAL.
-    LOG_LEVEL =  "DEBUG"
-    
-    # The log message format.
-    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s - %(filename)s:%(funcName)s:%(lineno)d"
+    import os
+    DIRNAME = os.path.abspath(os.path.dirname(__file__))
+    LOGGING_CONF = getattr(settings, "LOGGING_CONF", os.path.join(DIRNAME,'conf/logging.conf'))

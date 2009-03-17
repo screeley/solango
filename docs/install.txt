@@ -32,9 +32,9 @@ You will need to add `solango` to your installed apps.::
 	    ...
     }
 
-`solango` comes with a few default settings that it needs to run. Copy all the contents of 
-`solango.initial_settings` into the root project `settings.py` file. More information is a
-available in the :ref:`settings <code-settings>` documentation.
+`solango` comes with a few default settings that it needs to run, they are all in 
+`solango.settings`. To override any of these settings just put it in your `settings.py`
+file. Solango looks there first for setting then takes the default.
 
  
 Solr

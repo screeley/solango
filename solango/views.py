@@ -32,7 +32,10 @@ def select(request, form_class=SearchForm, template_name='solango/search.html',
     if request.GET:
         form = form_class(request.GET)
         if form.is_valid():
+            # Get all the get params
             params.update(dict(request.GET.items()))
+            # Overwrite those with anything you might of changed in the form.
+            params.update(form.cleaned_data)
             paginator = SearchPaginator(params, request)
             facets = utils.get_facets_links( request, paginator.results)
             sort_links = utils.get_sort_links(request)
