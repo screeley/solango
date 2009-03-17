@@ -5,9 +5,6 @@ Points of Pain
 ==============
 Just a running list of things that suck. Feel free to add your own.
 
-* settings. Sucks that you have to manually copy all the settings from inital_settings.py into the 
-  root settings file. Has to be an easier way. 
-
 * more robust import process. Right now it looks like this::
     
     for a in settings.INSTALLED_APPS:
@@ -22,8 +19,6 @@ Just a running list of things that suck. Feel free to add your own.
    That sucks. Look at: django.contrib.admin.sites.register
 
 * Unit Tests. Poor showing here, none exist. 
-
-* Advanced Search. Create a `AdvancedSearchForm` that is aware of facetable attributes so the user can limit their search.
 
 * Document range queries. see the `Solr Query Syntax <http://wiki.apache.org/solr/SolrQuerySyntax>`_
 
