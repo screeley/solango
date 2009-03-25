@@ -83,6 +83,7 @@ def _from_python(value):
             value = 'true'
         else:
             value = 'false'
-    else:
+    #unicode make None into 'None'. We don't want that.
+    elif value is not None:
         value = unicode(value)
     return value

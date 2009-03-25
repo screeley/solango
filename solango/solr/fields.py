@@ -57,7 +57,11 @@ class Field(object):
             self.value = unicode(re.sub(r"<[^>]*?>", "", value), "utf-8")
         
     def __unicode__(self):
-        return '<field name="%s"><![CDATA[%s]]></field>\n' % (self.get_name(), utils._from_python(self.value))
+        value = utils._from_python(self.value)
+        if value is not None:
+            return '<field name="%s"><![CDATA[%s]]></field>\n' % (self.get_name(), value)
+        else:
+            return '<field name="%s" />\n' % self.get_name()
                 
     def dynamic_name(self):
         return "%s_%s" % (self.name, self.dynamic_suffix)

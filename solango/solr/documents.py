@@ -173,18 +173,23 @@ class BaseSearchDocument(object):
         """
         Takes the data dictionary and creates python values from it.
         """
-        if not self.data_dict:
-            raise ValueError('No data to clean into a Search Document')
-        
+
         for name, field in self.fields.items():
-            value = None
-            field.value = self.data_dict[field.get_name()]
-            try:
-                value = getattr(self, 'clean_%s' % name, None)()
-                field.value = value
-            except:
-                #no transform rely on the field
-                field.clean()
+            # Key Errors were being thrown here if the document expected a field
+            # that wasn't returned.
+            if self.data_dict.has_key(field.get_name()):
+                field.value = self.data_dict[field.get_name()]
+                try:
+                    value = None
+                    value = getattr(self, 'clean_%s' % name, None)()
+                    field.value = value
+                except:
+                    #no transform rely on the field
+                    field.clean()
+            else:
+                # field not found in Solr's response,
+                # assume field was null when indexed
+                field.value = None
     
     def __unicode__(self):
         """
