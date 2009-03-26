@@ -201,7 +201,10 @@ class BaseSearchDocument(object):
         return self.to_xml(True)
     
     def add(self):
-        return self.to_xml()
+        if self.is_indexable(self._model):
+            return self.to_xml()
+        else:
+            return ''
     
     def to_xml(self, delete=False):
         #Delete looks like <id>1</id>
@@ -218,6 +221,12 @@ class BaseSearchDocument(object):
     def render_html(self):
         return render_to_string(self.template, {'document' : self})
     
+    def is_indexable(self, instance):
+        """
+        If true then the instance is indexed
+        """
+        return True
+
 class SearchDocument(BaseSearchDocument):
     id      = search_fields.PrimaryKeyField()
     model   = search_fields.ModelField()

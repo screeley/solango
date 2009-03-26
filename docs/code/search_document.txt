@@ -175,3 +175,12 @@ Document Methods
 
   * If you want to change the value of a field when the document is returned in a `SearchResults` you can use this method.
     It does not pass a model instance in, you can just modify the field value.
+
+* `is_indexable`
+
+  * In the default search document, everything is indexable. You can override this method
+    to provide selective indexing for a given model. For instance, a typical is_indexable
+    method might look like this::
+    
+        def is_indexable(self, instance):
+            return instance.is_public and not instance.is_deleted
