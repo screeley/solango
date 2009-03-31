@@ -61,7 +61,7 @@ class Field(object):
         if value is not None:
             return '<field name="%s"><![CDATA[%s]]></field>\n' % (self.get_name(), value)
         else:
-            return '<field name="%s" />\n' % self.get_name()
+            return ''
                 
     def dynamic_name(self):
         return "%s_%s" % (self.name, self.dynamic_suffix)
