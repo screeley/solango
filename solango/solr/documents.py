@@ -207,16 +207,16 @@ class BaseSearchDocument(object):
             return ''
     
     def to_xml(self, delete=False):
-        #Delete looks like <id>1</id>
+        doc = None
         if delete:
-            return "<%s>%s</%s>" % (self.pk_field.name, self.pk_field.value, self.pk_field.name)
-
-        doc = unicode("", "utf-8")
+            #Delete looks like <id>1</id>
+            doc = u"<%s>%s</%s>" % (self.pk_field.name, self.pk_field.value, self.pk_field.name)
+        else:
+            doc = unicode("", "utf-8")
+            doc = doc.join([unicode(field) for field in self.fields.values()])
+            doc = "<doc>\n" + doc + "</doc>\n"
         
-        for field in self.fields.values():
-            doc += unicode(field)
-        
-        return "<doc>\n" + doc + "</doc>\n"
+        return doc
 
     def render_html(self):
         return render_to_string(self.template, {'document' : self})

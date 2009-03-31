@@ -14,6 +14,8 @@ class Command(NoArgsCommand):
             help='Will remove the data directory from Solr.'),                      
         make_option('--reindex', dest='index_solr', action='store_true', default=False,
             help='Will reindex Solr from the registry.'),
+        make_option('--batch-size', dest='index_batch_size', default=False,
+            help='Used with --reindex. Sets solr index batch size.'),
         make_option('--schema', dest='solr_schema', action='store_true', default=False,
             help='Will create the schema.xml in SOLR_SCHEMA_PATH or in the --path.'),
         make_option('--path', dest='schema_path', default=False,
@@ -32,6 +34,7 @@ class Command(NoArgsCommand):
 
     def handle_noargs(self, **options):
         index_solr = options.get('index_solr')
+        index_batch_size = options.get('index_batch_size')
         schema = options.get('solr_schema')
         schema_path = options.get('schema_path')
         flush_solr =options.get('flush_solr')
@@ -96,10 +99,18 @@ Successfully created schema.xml in/at: %s
                 raise CommandError("Solr connection is not available")
             
             from solango.utils import reindex
-            print "Starting to reindex Solr"
-            reindex()
-            print "Finished the reindex of Solr"
-        
+            if not index_batch_size:
+                index_batch_size = getattr(settings,"SOLR_BATCH_INDEX_SIZE")
+
+            try:
+                # Throws value errors.
+                index_batch_size = int(index_batch_size)
+                print "Starting to reindex Solr"
+                reindex(batch_size = index_batch_size)
+                print "Finished the reindex of Solr"
+            except ValueError, e:
+                raise CommandError("ERROR: Invalid --batch-size agrument ( %s ). exception: %s" % (str(index_batch_size), str(e)))
+            
         if start_solr:
             # Make sure the `SOLR_ROOT` and `start.jar` exist.
             if not SOLR_ROOT:

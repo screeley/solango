@@ -15,6 +15,9 @@ SOLR_ROOT = getattr(settings,"SOLR_ROOT", None)
 SOLR_SCHEMA_PATH = getattr(settings,"SOLR_SCHEMA_PATH", None)
 SOLR_DATA_DIR = getattr(settings,"SOLR_DATA_DIR", None)
 
+### BATCH INDEX SIZE
+SOLR_BATCH_INDEX_SIZE = getattr(settings,"SOLR_BATCH_INDEX_SIZE", 10)
+
 #### Default Query Operator
 SOLR_DEFAULT_OPERATOR = getattr(settings, "SOLR_DEFAULT_OPERATOR", "OR")
 
