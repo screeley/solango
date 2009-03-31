@@ -35,8 +35,14 @@ def post_save(sender, instance, created, *args, **kwargs):
         return None
     
     document = registry[key](instance)
-    #Note adding and updating a document in solr uses the same command
-    connection.add([document])
+
+    # Could be a pain, but only way to make sure the index is updated. 
+    if document.is_indexable(instance):
+        #Note adding and updating a document in solr uses the same command
+        connection.add([document])
+    else:
+        connection.delete([document])
+
 
 def post_delete( sender, instance, *args, **kwargs):
     """
