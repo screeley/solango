@@ -24,7 +24,14 @@ class SearchView(object):
     
     Based on the upcoming django views. by jkocherhans
         http://code.djangoproject.com/attachment/ticket/6735/new-generic-views.3.diff
-    """ 
+    """
+    def __init__(self, form_class=None, template_name=None, error_redirect=None):
+        self.form_class = form_class
+        self.template_name = template_name
+        if not error_redirect:
+            error_redirect = 'solango_search_error'
+        self.error_redirect = error_redirect
+    
     def __call__(self, request, form_class=None, template_name=None, extra_context={}):
         return self.main(request, form_class, template_name, extra_context={})
 
@@ -33,7 +40,7 @@ class SearchView(object):
         Main Function of view
         """
         if not self.is_available():
-            return HttpResponseRedirect(reverse('solango_search_error'))
+            return HttpResponseRedirect(reverse(self.error_redirect))
         
         form_class = self.get_form(form_class)
         
@@ -76,15 +83,18 @@ class SearchView(object):
         """
         If the form_class is passed in user that one, else the default
         """
-        if form_class:
-            return form_class
-        else:
-            return SearchForm
+        if not form_class:
+            form_class = self.form_class
+        if not form_class:
+            form_class = SearchForm
+        return form_class
     
     def get_template(self, request, template_name): 
         """ 
         Returns the loaded Template
         """
+        if not template_name:
+            template_name = self.template_name
         if not template_name:
             template_name = 'solango/search.html'
         return loader.get_template(template_name) 
@@ -99,9 +109,5 @@ class SearchView(object):
                                         'form' : form,
                                         'sort_links' : sort_links}) 
     
-
 # View.
 select = SearchView()
-
-      
-  
