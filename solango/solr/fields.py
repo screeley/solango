@@ -17,8 +17,13 @@ class Field(object):
     
     name    -- Name  of field 
     value   -- Value of field
-    copy    -- Boolean, if true the value will be copied into the text field of the document
     
+    copy -- Boolean, if true the value will be copied into the field(s) specied
+    in 'dest'
+
+    dest -- String, Tuple or List: solr field(s) name where field value should
+    be copied. Defaults to "text".
+
     dynamic -- Boolean, if field is created on the fly lets us tell solr where it 
         needs to end up. by default dynamic fields are copyied into the text field
     
@@ -38,6 +43,10 @@ class Field(object):
         
         self.value,  self.copy, self.dynamic, self.indexed = value, copy, dynamic, indexed
         self.multi_valued, self.stored, self.extra_attrs = multi_valued, stored, extra_attrs
+
+        if isinstance(dest, basestring):
+            dest = [dest]
+
         self.omit_norms, self.dest, self.required = omit_norms, dest, required
         
         # Clean the field value of tags and other nasty things.  Unfortunately,
@@ -88,7 +97,8 @@ class Field(object):
                    str(self.omit_norms).lower(), str(self.required).lower(), str(self.multi_valued).lower())
         
     def _config_copy(self):
-        return '<copyField source="%s" dest="%s"/>' % (self.name, self.dest)
+        pattern = '<copyField source="%s" dest="%%s"/>' % self.name
+        return '\n'.join((pattern % dest for dest in self.dest))
     
     def clean(self):
         """
