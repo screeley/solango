@@ -210,7 +210,7 @@ class BaseSearchDocument(object):
         doc = None
         if delete:
             #Delete looks like <id>1</id>
-            doc = u"<%s>%s</%s>" % (self.pk_field.name, self.pk_field.value, self.pk_field.name)
+            doc = u"<id>%s</id>" % (self.pk_field.value,)
         else:
             doc = unicode("", "utf-8")
             doc = doc.join([unicode(field) for field in self.fields.values()])
