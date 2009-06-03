@@ -66,12 +66,26 @@ class Field(object):
             self.value = unicode(re.sub(r"<[^>]*?>", "", value), "utf-8")
         
     def __unicode__(self):
-        value = utils._from_python(self.value)
-        if value is not None:
-            return '<field name="%s"><![CDATA[%s]]></field>\n' % (self.get_name(), value)
-        else:
-            return ''
-                
+        result = []
+        values = self.value
+
+        if not self.multi_valued \
+            or self.multi_valued and not isinstance(values, (list, tuple)):
+            values = [values]
+
+        for value in values:
+            value = utils._from_python(value)
+            if value is not None:
+                result.append('<field name="%s"><![CDATA[%s]]></field>\n'
+                              % (self.get_name(), value))
+            else:
+                result.append('')
+
+        if self.multi_valued:
+            return '\n'.join(result)
+
+        return result[0]
+
     def dynamic_name(self):
         return "%s_%s" % (self.name, self.dynamic_suffix)
     
