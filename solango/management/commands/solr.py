@@ -47,8 +47,12 @@ class Command(NoArgsCommand):
         SOLR_SCHEMA_PATH = getattr(settings, 'SOLR_SCHEMA_PATH', None)
         SOLR_DATA_DIR = getattr(settings, 'SOLR_DATA_DIR', None)
         SOLR_ROOT = getattr(settings, 'SOLR_ROOT', None)
-                
-        if schema or solr_fields:
+        
+        if solr_fields:
+            from solango.utils import create_schema_xml
+            create_schema_xml(True)
+        
+        if schema:
             #Get the Path
             path = None
             if schema_path:
@@ -65,13 +69,10 @@ class Command(NoArgsCommand):
                 path = os.path.join(path, 'schema.xml')
             
             from solango.utils import create_schema_xml
-            if solr_fields:
-                create_schema_xml(True)
-            else:
-                f = open(path, 'w')
-                f.write(create_schema_xml())
-                f.close()
-                print """
+            f = open(path, 'w')
+            f.write(create_schema_xml())
+            f.close()
+            print """
 Successfully created schema.xml in/at: %s
 
 ******************************************************************************
