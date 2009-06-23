@@ -17,6 +17,18 @@
     {% endif %}
     
 {% endfor %}
+{% for link in facet_dates %}
+    
+    {% if link.href %}
+        <li><a class="Facet{{ link.level }} {% if link.active %}active{% endif %}"
+            href="{{ link.href }}">{{ link.anchor }}</a> {% if link.count %} ({{ link.count }}) {% endif %}</li>
+    {% else %}
+        </ul>
+        <ul class="linkType">
+        <li><h3>{{ link }}</h3></li>
+    {% endif %}
+    
+{% endfor %}
 </ul>
 {% if sort_links %}
 <h3>Sort</h3>

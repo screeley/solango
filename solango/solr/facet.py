@@ -1,7 +1,6 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
-
 from solango.solr import xmlutils
 from solango import settings
 import re
@@ -19,13 +18,19 @@ class FacetValue(object):
         (self.parent, self.children, self.level) = (None, [], 0)
         
         n = self.value.rfind(settings.SEARCH_SEPARATOR)
-        
         if n == -1:
             n = 0
         else:
             n += len(settings.SEARCH_SEPARATOR)
-        
         self.name = self.value[n:].title()
+        
+        
+        n = self.name.rfind(settings.FACET_SEPARATOR)
+        if n == -1:
+            n = 0
+        else:
+            n += len(settings.FACET_SEPARATOR)
+        self.name = self.name[n:].title()
     
 class Facet(object):
     """
@@ -144,9 +149,6 @@ class Facet(object):
             
             value = xmlutils.get_attribute(c, "name")
             count = xmlutils.get_int(c)
-            
             self.values.append(FacetValue(value, count))
         
         self.merge_values()
-
-        

@@ -31,6 +31,12 @@ SEARCH_SORT_PARAMS = getattr(settings, "SEARCH_SORT_PARAMS", {
 SEARCH_FACET_PARAMS =  getattr(settings, "SEARCH_FACET_PARAMS", [
     ("facet", "true"),             # Basic faceting
     ("facet.field", "model"),      # Facet by model
+    
+    # date faceting
+    #("facet.date", "date"),      # Replace date with the name of your solr date field
+    #("facet.date.start", "2000-01-01T00:00:00.000Z"),
+    #("facet.date.end", "NOW/DAY+1DAY"),
+    #("facet.date.gap", "+1YEAR"),
 ])
 
 SEARCH_HL_PARAMS = getattr(settings, "SEARCH_HL_PARAMS" ,[

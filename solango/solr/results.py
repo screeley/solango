@@ -10,6 +10,9 @@ from solango import settings
 from solango import registry
 import urllib
 
+class SolrException(Exception):
+    pass
+
 class Results:
     """
     Results instances parse Solr response XML into Python objects.  A Solr
@@ -119,7 +122,7 @@ class SelectResults(Results):
     Results for Solr select requests.
     """
     
-    (count, documents, facets, highlighting) = (None, None, None, None)
+    (count, documents, facets, facet_dates, highlighting, date_gap) = (None, None, None, None, None, None)
     
     def __init__(self, xml):
         """
@@ -128,7 +131,7 @@ class SelectResults(Results):
         """
         Results.__init__(self, xml)
         
-        (self.documents, self.facets, self.highlighting) = ([], [], {})
+        (self.documents, self.facets, self.facet_dates, self.highlighting) = ([], [], [], {})
         
         self._parse_results()
         
@@ -173,16 +176,29 @@ class SelectResults(Results):
         result = self._get_result_node()
         facets =  xmlutils.get_sibling_node(result, "lst", "facet_counts")
         
+        
         if not facets:
             return None
         
         fields = xmlutils.get_child_node(facets, "lst", "facet_fields")
-
+        
         if not fields:
             return None
+                    
+        exceptions = xmlutils.get_child_node(facets, 'str')
+        
+        if exceptions:
+            raise SolrException('There was a java exception:  %s' % exceptions.lastChild.wholeText)
 
         for facet in xmlutils.get_child_nodes(fields, "lst"):
             self.facets.append(Facet(facet))
+            
+        facet_dates = xmlutils.get_child_node(facets, "lst", "facet_dates")
+        
+        for facet_date in xmlutils.get_child_nodes(facet_dates, "lst"):
+            self.facet_dates.append(Facet(facet_date))
+            
+        self.date_gap = self.header.get('facet.date.gap', '+1YEAR') # default to a 1 year gap
         
     def _parse_highlighting(self):
         """

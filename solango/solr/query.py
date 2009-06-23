@@ -29,8 +29,6 @@ class Facet(CleverDict):
     """
     Python class representation of solr's facet capibilites
     
-    Date faceting has not been implemented
-    
     by default solr assumes
         self.sort = False
         self.offset = 0

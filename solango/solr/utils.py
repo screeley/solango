@@ -55,6 +55,10 @@ class CleverDict(dict):
                 if len(bits) is 1:
                     # something like ('facet', True)
                     continue
+                if len(bits) is 3:
+                    self[bits[1]+'.'+bits[2]] = value
+                    continue
+                
                 try:
                     v = self[bits[1]]
                     if isinstance(v, list):
