@@ -19,6 +19,8 @@ from solango.solr.query import Query
 >>> query.highlight = 
 
 """
+from django.utils.encoding import smart_str
+
 from solango.solr import utils
 from solango.solr.utils import CleverDict
 from solango import settings
@@ -201,7 +203,9 @@ class Query(dict):
 
         if not q:
             return ''
-                
+        
+        #Clean up the params
+        params = [(k,smart_str(v)) for k,v in params]
         query = urllib.urlencode(params)
         
         if self.facet:
