@@ -202,7 +202,13 @@ class UrlField(CharField):
         super(UrlField, self).__init__(name='url', *args, **kwargs)
     
     def transform(self, model):
-        self.value = model.get_absolute_url()
+        """
+        If the model has a `get_absolute_url` method use it.
+        """
+        try:
+            self.value = model.get_absolute_url()
+        except AttributeError:
+            self.value = ""
         return unicode(self)
 
 class PrimaryKeyField(CharField):
