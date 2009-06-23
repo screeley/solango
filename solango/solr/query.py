@@ -191,7 +191,7 @@ class Query(dict):
                 params.append( ('q', ' AND '.join(self.q)), )
                 q = True
             elif key == 'sort':
-                params.append( ('sort', ' '.join(value)), )
+                params.append( ('sort', ', '.join(value)), )
             elif key == 'op':
                 params.append( ('q.op', value), )
             elif isinstance(value, list):
