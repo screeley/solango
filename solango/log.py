@@ -17,7 +17,8 @@ class LogManager:
         """
         Instantiate the default logger.
         """
-        logging.config.fileConfig(LOGGING_CONF)
+        if not logging.getLogger().handlers:
+            logging.config.fileConfig(LOGGING_CONF)
         self.logger = logging.getLogger('solango')
     
 log_manager = LogManager()
