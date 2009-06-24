@@ -58,7 +58,7 @@ def post_delete( sender, instance, *args, **kwargs):
     document = registry[key](instance)
     connection.delete([document,]) 
 
-def register(model_or_iterable, search_document=None):
+def register(model_or_iterable, search_document=None, connect_signals=True):
     if isinstance(model_or_iterable, ModelBase):
         model_or_iterable = [model_or_iterable]
     for model in model_or_iterable:
@@ -70,9 +70,10 @@ def register(model_or_iterable, search_document=None):
             search_document = SearchDocument
         key = get_model_key(model)
         registry[key] = search_document
-        #Hook Up The Signals
-        signals.post_save.connect(post_save, model)
-        signals.post_delete.connect(post_delete, model)
+        if connect_signals:
+            #Hook Up The Signals
+            signals.post_save.connect(post_save, model)
+            signals.post_delete.connect(post_delete, model)
 
 for a in django_settings.INSTALLED_APPS:
     try:
