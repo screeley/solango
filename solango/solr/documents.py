@@ -128,6 +128,7 @@ class BaseSearchDocument(object):
         self.data_dict = {}
         self.highlight = ""
         self.boost = ""
+        self._transformed = False
 
         # If it's a model, set the _model and create a dictionary from the fields
         if isinstance(model_or_dict, Model):
@@ -150,11 +151,21 @@ class BaseSearchDocument(object):
             raise NoPrimaryKeyFieldException('Search Document needs a Primary Key Field')
         
         if self._model:
-            self.transform()
+            self._transform_field(self.pk_field)
             self.boost = self.get_boost(self._model)
         else:
             self.clean()
+            self._transformed = True
             self.boost = self.get_boost(self.get_model_instance())
+
+    def _transform_field(self, field):
+        value = None
+        try:
+            value = getattr(self, 'transform_%s' % field.name)(self._model)
+            field.value = value
+        except AttributeError:
+            #no transform rely on the field
+            field.transform(self._model)
 
     def transform(self):
         """
@@ -163,14 +174,11 @@ class BaseSearchDocument(object):
         if not self._model:
             raise ValueError('No model to transform into a Search Document')
         
-        for name, field in self.fields.items():
-            value = None
-            try:
-                value = getattr(self, 'transform_%s' % name)(self._model)
-                field.value = value
-            except AttributeError:
-                #no transform rely on the field
-                field.transform(self._model)
+        if not self._transformed:
+            for field in self.fields.values():
+                if field != self.pk_field:
+                    self._transform_field(field)
+            self._transformed = True
     
     def clean(self):
         """
@@ -215,6 +223,7 @@ class BaseSearchDocument(object):
             #Delete looks like <id>1</id>
             doc = u"<id>%s</id>" % (self.pk_field.value,)
         else:
+            self.transform()
             doc = u"".join([unicode(field) for field in self.fields.values()])
             
             if self.boost:
