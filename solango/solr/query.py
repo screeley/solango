@@ -143,8 +143,9 @@ class Query(dict):
                 temp_list.append((key,value))
             else:
                 temp_list.append(('%s' % key, utils._from_python(value)))
+        for v in self.fq:
+            temp_list.append(('fq', v))
         return temp_list
-
         
     def as_list(self):
         return [(key, value) for key, value in self.items()]
@@ -156,7 +157,10 @@ class Query(dict):
         """
         params = []
         if args:
-            params = [(key, value) for key, value in args[0].items() if value]
+            if isinstance(args[0], dict):
+                params = [(key, value) for key, value in args[0].items() if value]
+            else:
+                params = list(args)
         params.extend(kwargs.items()) 
         
         if not params:
@@ -169,6 +173,8 @@ class Query(dict):
                 facet_params.append((key, value),)
             elif key.startswith('hl'):
                 hl_params.append((key, value),)
+            elif key == 'fq':
+                self.fq.append(value)
             else:
                 try:
                     v = self[key]
