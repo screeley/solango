@@ -104,6 +104,10 @@ Each field takes a number of options. They determine how Solr should react to ea
 
   * True if this field may contain multiple values per document, i.e. if it can appear multiple times in a document
 
+* **boost**: String
+
+  * Specify a custom boost for this field. e.g. boost="2.5"
+
 * **omitNorms**: Boolean
 
   * Set to true to omit the norms associated with this field (this disables length normalization and index-time 
@@ -184,3 +188,8 @@ Document Methods
     
         def is_indexable(self, instance):
             return instance.is_public and not instance.is_deleted
+
+* `get_boost`
+
+  * If you want to boost the entire search doc, you can override get_boost(self, instance)
+    to calculate a boost specific to that search document.
