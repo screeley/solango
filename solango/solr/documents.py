@@ -127,7 +127,8 @@ class BaseSearchDocument(object):
         self._model = None
         self.data_dict = {}
         self.highlight = ""
-        
+        self.boost = ""
+
         # If it's a model, set the _model and create a dictionary from the fields
         if isinstance(model_or_dict, Model):
             #make it into a dict.
@@ -150,9 +151,11 @@ class BaseSearchDocument(object):
         
         if self._model:
             self.transform()
+            self.boost = self.get_boost(self._model)
         else:
             self.clean()
-        
+            self.boost = self.get_boost(self.get_model_instance())
+
     def transform(self):
         """
         Takes an model instance and transforms it into a Search Document
@@ -212,9 +215,14 @@ class BaseSearchDocument(object):
             #Delete looks like <id>1</id>
             doc = u"<id>%s</id>" % (self.pk_field.value,)
         else:
-            doc = unicode("", "utf-8")
-            doc = doc.join([unicode(field) for field in self.fields.values()])
-            doc = "<doc>\n" + doc + "</doc>\n"
+            doc = u"".join([unicode(field) for field in self.fields.values()])
+            
+            if self.boost:
+                boost_attr = ' boost="%s"' % self.boost
+            else:
+                boost_attr = ''
+            
+            doc = u"<doc%s>\n%s</doc>\n" % (boost_attr, doc)
         
         return doc
 
@@ -227,6 +235,28 @@ class BaseSearchDocument(object):
         """
         return True
 
+    def get_model_instance(self):
+        """
+        Returns the model instance that the document refers to.
+        """
+        if self.data_dict:
+            from solango.solr import get_model_from_key
+            from solango import settings
+            
+            model = get_model_from_key(self.data_dict['model'])
+            id = self.data_dict['id'].split(settings.SEARCH_SEPARATOR)[2]
+            
+            return model.objects.get(pk=id)
+        elif self._model:
+            return self._model
+        return None
+
+    def get_boost(self, instance):
+        """
+        Override this to specify a custom per-document boost.
+        """
+        return ''
+
 class SearchDocument(BaseSearchDocument):
     id      = search_fields.PrimaryKeyField()
     model   = search_fields.ModelField()
@@ -238,4 +268,3 @@ class SearchDocument(BaseSearchDocument):
         template = 'solango/default_document.html'
         
     __metaclass__ = DeclarativeFieldsMetaclass
-    

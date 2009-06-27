@@ -33,12 +33,14 @@ class Field(object):
     stored=true|false
         True if the value of the field should be retrievable during a search
     
+    boost -- Index the field with a custom boost.
+    
     """
     # Tracks each time a Field instance is created. Used to retain order.
     creation_counter = 0
     
     def __init__(self, name='', value=None, required=False, copy=False, dest="text", dynamic=False, indexed=True, stored=True,
-                multi_valued=False, omit_norms=False, extra_attrs={}):
+                multi_valued=False, omit_norms=False, boost=None, extra_attrs={}):
         self.name = smart_unicode(name)
         
         self.value,  self.copy, self.dynamic, self.indexed = value, copy, dynamic, indexed
@@ -48,10 +50,8 @@ class Field(object):
             dest = [dest]
 
         self.omit_norms, self.dest, self.required = omit_norms, dest, required
+        self.boost = boost
         
-        # Clean the field value of tags and other nasty things.  Unfortunately,
-        # we can't use sax or dom to do this elegantly, because often the 
-        # fields which look like XML are not well-formed.
         # Increase the creation counter, and save our local copy.
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
@@ -61,6 +61,9 @@ class Field(object):
         # self.highlight
         self.highlight = None
         
+        # Clean the field value of tags and other nasty things.  Unfortunately,
+        # we can't use sax or dom to do this elegantly, because often the 
+        # fields which look like XML are not well-formed.
         if value:
             value = str(value.replace("<![CDATA[", "").replace("]]>", ""))
             self.value = unicode(re.sub(r"<[^>]*?>", "", value), "utf-8")
@@ -76,8 +79,13 @@ class Field(object):
         for value in values:
             value = utils._from_python(value)
             if value is not None:
-                result.append('<field name="%s"><![CDATA[%s]]></field>\n'
-                              % (self.get_name(), value))
+                if self.boost:
+                    boost_attr = ' boost="%s"' % self.boost
+                else:
+                    boost_attr = ''
+                    
+                xml = '<field name="%s"%s><![CDATA[%s]]></field>\n'
+                result.append(xml % (self.get_name(), boost_attr, value))
             else:
                 result.append('')
 
