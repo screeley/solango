@@ -27,8 +27,9 @@ def get_base_url(request, exclude=[]):
                 get.pop(e)
         
         if len(get):
-            ret += urllib.urlencode(get) + "&"
-    
+            get_items = [(k,v.encode('utf-8')) for k,v in get.items()]
+            ret += urllib.urlencode(get_items) + "&"
+   
     return ret
 
 def get_param(request, name, default=""):
