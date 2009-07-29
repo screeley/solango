@@ -24,6 +24,8 @@ class Command(NoArgsCommand):
             help='Prints out the fields the schema.xml will create'),
         make_option('--start', dest='start_solr', action='store_true', default=False,
             help='Start solr running java -jar start.jar'),
+        make_option('--index-queued', dest='index_queued', action='store_true', default=False,
+            help='Indexes all the documents in the index queue table, and truncates the table.'),
     )
     args = ''
 
@@ -40,6 +42,7 @@ class Command(NoArgsCommand):
         flush_solr =options.get('flush_solr')
         solr_fields =options.get('solr_fields')
         start_solr = options.get('start_solr')
+        index_queued = options.get('index_queued')
          
         from solango import settings
         
@@ -129,3 +132,7 @@ Successfully created schema.xml in/at: %s
                 # Throws nasty errors if we don't catch the keyboard interrupt.
                 pass
             print "Solr process has been interrupted"
+            
+        if index_queued:
+            from solango.indexing import indexer
+            indexer.index_queued()

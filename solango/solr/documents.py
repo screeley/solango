@@ -52,6 +52,8 @@ from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 
 from solango import fields as search_fields
+from solango.solr import get_model_from_key
+from solango import settings
 
 from copy import deepcopy
 
@@ -112,16 +114,22 @@ class DeclarativeFieldsMetaclass(type):
         return new_class
 
 class BaseSearchDocument(object):
-    def __init__(self, model_or_dict):
+    def __init__(self, arg):
         """
-        Takes a model or a dict.
+        Takes a model, dict, or tuple.
         
         for a model it assumes that you are trying to create a document from the values
         
         for a dict it assumes that you recieved results from solr and you want to make a 
         python object representation of the model    
+        
+        For a tuple of the form (model_key, instance_id), it creates a document
+        from the corresponding model instance. if the instance does not exist, it
+        will succeed. This is useful for creating documents to remove from the
+        index, after the instance has already been deleted.
             
         """
+        
         self.fields = deepcopy(self.base_fields)
         self.pk_field = None
         self._model = None
@@ -129,16 +137,26 @@ class BaseSearchDocument(object):
         self.highlight = ""
         self.boost = ""
         self._transformed = False
+        self._is_deleted = False
 
         # If it's a model, set the _model and create a dictionary from the fields
-        if isinstance(model_or_dict, Model):
+        if isinstance(arg, Model):
             #make it into a dict.
-            self._model = model_or_dict
-            self.data_dict = model_to_dict(model_or_dict)
-        elif isinstance(model_or_dict, dict):
-            self.data_dict = model_or_dict
+            self._model = arg
+            self.data_dict = model_to_dict(arg)
+        elif isinstance(arg, dict):
+            self.data_dict = arg
+        elif isinstance(arg, (tuple, list)):
+            if len(arg) != 2:
+                raise ValueError('Tuple argument must be of the form (model_key, instance_id)')
+            
+            model = get_model_from_key(arg[0])
+            try:
+                self._model = model.objects.get(pk=arg[1])
+            except model.DoesNotExist:
+                self._is_deleted = True
         else:
-            raise ValueError('Argument must be a Model or a dictionary')
+            raise ValueError('Argument must be a Model, a dictionary or a tuple')
         
         # Iterate through fields and get value
         for field in self.fields.values():
@@ -153,10 +171,12 @@ class BaseSearchDocument(object):
         if self._model:
             self._transform_field(self.pk_field)
             self.boost = self.get_boost(self._model)
-        else:
+        elif self.data_dict:
             self.clean()
             self._transformed = True
             self.boost = self.get_boost(self.get_model_instance())
+        else:
+            self.pk_field.value = self.pk_field.make_key(arg[0], arg[1])
 
     def _transform_field(self, field):
         value = None
@@ -184,6 +204,9 @@ class BaseSearchDocument(object):
         """
         Takes the data dictionary and creates python values from it.
         """
+        
+        if not self.data_dict:
+            raise ValueError('No data dict to create python values from')
 
         for name, field in self.fields.items():
             # Key Errors were being thrown here if the document expected a field
@@ -243,15 +266,19 @@ class BaseSearchDocument(object):
         If true then the instance is indexed
         """
         return True
+    
+    def is_deleted(self):
+        """
+        If the document was created with a tuple (model_key, instance_id)
+        and the model instance no longer exists, returns True.
+        """
+        return self._is_deleted
 
     def get_model_instance(self):
         """
         Returns the model instance that the document refers to.
         """
         if self.data_dict:
-            from solango.solr import get_model_from_key
-            from solango import settings
-            
             model = get_model_from_key(self.data_dict['model'])
             id = self.data_dict['id'].split(settings.SEARCH_SEPARATOR)[2]
             

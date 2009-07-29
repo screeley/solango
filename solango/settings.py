@@ -4,6 +4,9 @@
 
 from django.conf import settings
 
+### Indexing implementation. See the supplied implementations in solango.indexing
+SOLR_INDEXER = getattr(settings, "SOLR_INDEXER", "solango.indexing.ImmediateIndexer")
+
 ### Search-specific settings.
 
 SEARCH_UPDATE_URL = getattr(settings, "SEARCH_UPDATE_URL", "http://localhost:8983/solr/update")

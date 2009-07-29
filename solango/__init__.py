@@ -13,6 +13,7 @@ from solango.solr import fields
 from solango.solr import get_model_key
 from solango.solr.connection import SearchWrapper
 from solango.solr.documents import SearchDocument
+from solango.indexing import indexer
 
 class AlreadyRegistered(Exception):
     pass
@@ -22,41 +23,6 @@ class NotRegistered(Exception):
 
 connection = SearchWrapper()
 SearchDocument = SearchDocument
-        
-def post_save(sender, instance, created, *args, **kwargs):
-    """
-    Apply any necessary pre-save moderation steps to new
-    comments.
-    
-    """
-    key = get_model_key(instance)
-    
-    if key not in registry.keys():
-        return None
-    
-    document = registry[key](instance)
-
-    # Could be a pain, but only way to make sure the index is updated. 
-    if document.is_indexable(instance):
-        #Note adding and updating a document in solr uses the same command
-        connection.add([document])
-    else:
-        connection.delete([document])
-
-
-def post_delete( sender, instance, *args, **kwargs):
-    """
-    Apply any necessary post-save moderation steps to new
-    comments.
-    
-    """
-    key = get_model_key(instance)
-    
-    if key not in registry.keys():
-        return None
-    
-    document = registry[key](instance)
-    connection.delete([document,]) 
 
 def register(model_or_iterable, search_document=None, connect_signals=True):
     if isinstance(model_or_iterable, ModelBase):
@@ -72,8 +38,8 @@ def register(model_or_iterable, search_document=None, connect_signals=True):
         registry[key] = search_document
         if connect_signals:
             #Hook Up The Signals
-            signals.post_save.connect(post_save, model)
-            signals.post_delete.connect(post_delete, model)
+            signals.post_save.connect(indexer.post_save, model)
+            signals.post_delete.connect(indexer.post_delete, model)
 
 for a in django_settings.INSTALLED_APPS:
     try:
@@ -84,13 +50,17 @@ for a in django_settings.INSTALLED_APPS:
     except ImportError, e:
         pass
 
-def get_document(instance):
+def get_document(instance_or_tuple):
     """
-    Helper to get document from instance
+    Helper to get document from either model instance,
+    or tuple in the form (model_key, instance_id)
     """
-    key = get_model_key(instance)
+    if isinstance(instance_or_tuple, tuple):
+        key = instance_or_tuple[0]
+    else:
+        key = get_model_key(instance_or_tuple)
     
     if key not in registry.keys():
         raise NotRegistered('Instance not reqistered with Solango')
     
-    return registry[key](instance)
+    return registry[key](instance_or_tuple)

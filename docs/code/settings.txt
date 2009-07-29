@@ -7,6 +7,9 @@ Settings
 Here are all the setting options with comments on how they are used::
 
     from django.conf import settings
+    
+    ### Indexing implementation. See the supplied implementations in solango.indexing
+    SOLR_INDEXER = getattr(settings, "SOLR_INDEXER", "solango.indexing.ImmediateIndexer")
 
     ### Search-specific settings.
     

@@ -39,6 +39,7 @@ References for the inner workings of Django Solr
 * :ref:`code-search_results`
 * :ref:`code-facet`
 * :ref:`code-highlighting`
+* :ref:`code-indexing`
 
 
 

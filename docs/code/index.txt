@@ -14,5 +14,6 @@ Code
     highlighting
     search_form
     
+    indexing
     connection
     settings

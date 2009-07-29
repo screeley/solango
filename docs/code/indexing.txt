@@ -1,0 +1,49 @@
+.. _code-indexing:
+
+========================
+Indexing implementations
+========================
+
+There are two indexing implementations included:
+
+ImmediateIndexer
+================
+
+This is the default indexer. As soon as a model instance is saved or deleted, 
+the post_save signal will update the index. 
+
+This is useful when your documents are small or easily computable and indexing
+won't hold up your web process too much. It's also handy in development so you
+don't have to mess around with cron jobs to do your indexing.
+
+If your search documents require a lot of computing to index, you should
+consider using a delayed indexer such as the DBQueuedIndexer, so your web 
+process doesn't have to wait for indexing.
+
+DBQueuedIndexer
+===============
+
+The DBQueuedIndexer uses a database model to store a queue of documents to
+index. It's up to you to add a cron job or other process to actually index the
+documents.
+
+To switch to using the DBQueuedIndexer, add to your settings.py::
+    
+    SEARCH_INDEXER = "solango.indexing.DBQueuedIndexer"
+
+Run syncdb to make create the queue table::
+    
+    python manage.py syncdb
+
+Your cron job can call the management command to index the queued documents::
+    
+    python manage.py solr --index-queued
+
+This will first index the documents, and then remove them from the queue.
+
+Custom Implementations
+======================
+
+You can define your own indexers. You'll probably want to extend 
+`solango.indexing.BaseIndexer` or one of the above indexers.
+If you make something clever, let us know, so we can include it in Solango!

@@ -224,6 +224,9 @@ class PrimaryKeyField(CharField):
     def __init__(self, *args, **kwargs):
         kwargs.update({'required' : True})
         super(PrimaryKeyField, self).__init__(*args, **kwargs)
+    
+    def make_key(self, model_key, pk):
+        return "%s%s%s" % (model_key, settings.SEARCH_SEPARATOR, pk)
         
     def transform(self, model):
         """
@@ -231,7 +234,7 @@ class PrimaryKeyField(CharField):
         
         This avoids duplicate documents
         """
-        self.value =  "%s%s%s" % (get_model_key(model), settings.SEARCH_SEPARATOR, model.pk)
+        self.value = self.make_key(get_model_key(model), model.pk)
         
         return unicode(self)
     
