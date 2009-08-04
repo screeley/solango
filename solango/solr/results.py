@@ -13,7 +13,7 @@ import urllib
 class SolrException(Exception):
     pass
 
-class Results:
+class Results(object):
     """
     Results instances parse Solr response XML into Python objects.  A Solr
     response contains a header section and, optionally, a result section.
@@ -58,8 +58,11 @@ class Results:
     See http://wiki.apache.org/solr/XMLResponseFormat
     """
     
-    (_doc, header, rows, start) = (None, None, 10, 0)
-    
+    _doc = None
+    header = None
+    rows = 10
+    start = 0 
+        
     def _parse_header(self):
         """
         Parses the results header into the header dictionary.
@@ -218,3 +221,30 @@ class SelectResults(Results):
             for key, value in self.highlighting[model_key].items():
                 d.highlight += ' ' + ' '.join(value)
                 d.fields[key].highlight = ' '.join(value)
+
+
+class EmptyResults(SelectResults):
+    """
+    If the search results ends up in a massive error, we return this
+    as a replacement. Avoids the UGLY "Invalid or missing XML" Error
+    """
+    def __init__(self, url):
+        self._url = url
+        self.documents = []
+        self.facets = []
+        self.facet_dates = []
+        self.highlighting ={}
+        self.count = 0
+        self.header ={}
+        
+    @property
+    def status(self):
+        return 1
+
+    @property
+    def time(self):
+        return None
+    
+    @property
+    def url(self):
+        return self._url

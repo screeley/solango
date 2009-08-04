@@ -3,7 +3,7 @@
 #
 
 from xml.dom import Node
-from  datetime import datetime
+from datetime import datetime
 from time import strptime
 
 """
@@ -125,7 +125,7 @@ def get_date(node):
     Parses the specified text Node into an datetime object.
     """
     value = get_unicode(node);
-    return datetime(*strptime(value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
+    return datetime(*strptime(value, "%Y-%m-%dT%H:%M:%SZ")[0:6])
     
 def get_attribute(node, name):
     """

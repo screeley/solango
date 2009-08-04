@@ -44,6 +44,8 @@ class SearchPaginator(object):
         self.results = connection.select(params)
         self.next_link = None
         self.previous_link = None
+        self.first_link = None
+        self.last_link = None
         self.links = []
         self._get_pagination_links(request)
     
@@ -73,6 +75,10 @@ class SearchPaginator(object):
                 self.previous_link = base.rstrip('?')
             else:
                 self.previous_link = base + "page=" + str(self.page-1)
+        
+        if links:
+            self.first_link = links[0]
+            self.last_link = links[-1]
         
         self.links = links
 

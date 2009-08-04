@@ -84,6 +84,10 @@ Successfully created schema.xml in/at: %s
                 """ % path
         
         if flush_solr:
+            import solango
+            if solango.connection.is_available():
+                raise CommandError("Flush has a tendency to fail if Solr is running. Please shut it down first.")
+            
             if SOLR_DATA_DIR:
                 if not os.path.exists(SOLR_DATA_DIR):
                     raise CommandError("Solr Data Directory has already been deleted or doesn't exist: %s" % SOLR_DATA_DIR)

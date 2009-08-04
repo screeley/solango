@@ -75,7 +75,6 @@ def get_model_declared_fields(bases, attrs, with_base_fields=True):
                 search_field = getattr(search_fields, field.__class__.__name__)
                 fields.append((field.attname, search_field(dynamic=True)),)
             except Exception, e:
-                print str(e)
                 pass
     fields.extend([(field_name, attrs.pop(field_name)) for field_name, obj in attrs.items() if isinstance(obj, search_fields.Field)])
     fields.sort(lambda x, y: cmp(x[1].creation_counter, y[1].creation_counter))
@@ -177,6 +176,14 @@ class BaseSearchDocument(object):
             self.boost = self.get_boost(self.get_model_instance())
         else:
             self.pk_field.value = self.pk_field.make_key(arg[0], arg[1])
+    
+    def __getitem__(self, name):
+        "Convenience method for templates"
+        try:
+            field = self.fields[name]
+        except KeyError:
+            raise KeyError('Key %r not found in Form' % name)
+        return field.value
 
     def _transform_field(self, field):
         value = None
@@ -217,7 +224,7 @@ class BaseSearchDocument(object):
                     value = None
                     value = getattr(self, 'clean_%s' % name, None)()
                     field.value = value
-                except:
+                except Exception, e:
                     #no transform rely on the field
                     field.clean()
             else:

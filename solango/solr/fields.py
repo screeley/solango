@@ -190,7 +190,9 @@ class IntegerField(Field):
     type = "integer"
     
     def clean(self):
-        if not isinstance(self.value, int):
+        if isinstance(self.value, list):
+            self.value = [int(i) for i in self.value]
+        elif not isinstance(self.value, int):
             self.value = int(self.value)
 
 class BooleanField(Field):

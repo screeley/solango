@@ -172,8 +172,14 @@ class SearchWrapper(object):
             query= args[0]
         else:
             query = Query(*args, **kwargs)
-        
+
         # Submits the response to solr
-        response = self.issue_request(self.select_url + "?" + query.url)
-    
-        return results.SelectResults(response)
+        request_url = self.select_url + "?" + query.url
+        response = self.issue_request(request_url)
+        
+        try:
+            return results.SelectResults(response)
+        except (ValueError, results.SolrException), e:
+            logger.error("Failed to return a valid search result for %s" % request_url)
+            return results.EmptyResults(query.url)
+            
