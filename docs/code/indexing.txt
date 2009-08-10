@@ -29,7 +29,7 @@ documents.
 
 To switch to using the DBQueuedIndexer, add to your settings.py::
     
-    SEARCH_INDEXER = "solango.indexing.DBQueuedIndexer"
+    SOLR_INDEXER = "solango.indexing.DBQueuedIndexer"
 
 Run syncdb to make create the queue table::
     
