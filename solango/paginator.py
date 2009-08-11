@@ -51,30 +51,31 @@ class SearchPaginator(object):
     
     def _get_pagination_links(self, request):
         base = utils.get_base_url(request,["page",])
+        sep = "?" in base and "&" or "?"
         
         links = []
         
         for i in self.page_range():
+            href = base
             
             if i == self.page:
                 links.append(str(i))
                 continue
             
-            if i == 1:
-                link = {"anchor": str(i), "href": base.rstrip('?')}
-            else:
-                link = {"anchor": str(i), "href": base + "page=" + str(i)}
+            if i != 1:
+                href += "%spage=%s" % (sep, i)
             
+            link = {"anchor": str(i), "href": href}
             links.append(link)
             
         if self.has_next:
-            self.next_link = base + "page=" + str(self.page+1)
+            self.next_link = "%s%spage=%s" % (base, sep, self.page+1)
             
         if self.has_previous:
             if self.page == 2:
-                self.previous_link = base.rstrip('?')
+                self.previous_link = base
             else:
-                self.previous_link = base + "page=" + str(self.page-1)
+                self.previous_link = "%s%spage=%s" % (base, sep, self.page-1)
         
         if links:
             self.first_link = links[0]
