@@ -9,39 +9,11 @@ def get_base_url(request, exclude=[]):
     Returns the base URL for request, with any excluded parameters removed.
     This is useful for constructing pagination or filtering URLs.
     """
-    ret = request.path
-    
-    i = ret.find("?")
-    
-    if i > -1:
-        ret = ret[:i + 1]
+    if request.GET:
+        get = [(k,v.encode('utf-8')) for k,v in request.GET.items() if k not in exclude]
+        return "%s?%s" % (request.path, urllib.urlencode(get))
     else:
-        ret += "?"
-    
-    if len(request.GET):
-        
-        get = request.GET.copy()
-        
-        for e in exclude:
-            if e in get:
-                get.pop(e)
-        
-        if len(get):
-            get_items = [(k,v.encode('utf-8')) for k,v in get.items()]
-            ret += urllib.urlencode(get_items) + "&"
-   
-    return ret
-
-def get_param(request, name, default=""):
-    """
-    A convenience function for fetching query string parameters.
-    """
-    params = request.POST or request.GET
-    
-    if not name in params:
-        return default
-    
-    return str(params[name])
+        return request.path
 
 def get_sort_links(request):
     """
@@ -52,20 +24,16 @@ def get_sort_links(request):
     
     sort_criteria = settings.SEARCH_SORT_PARAMS
     
-    sort = get_param(request, "sort", "score desc")
+    sort = request.REQUEST.get("sort", "score desc")
     
     base = get_base_url(request, ["sort", "page"])
 
-    for s in sort_criteria:
-        
-        if s == sort:
-            links.append(sort_criteria[s])
-            continue
-        
+    for s in sort_criteria.keys():
+        current = s == sort
+        href = base
         if s:
-            href = base + "sort=" + s
-        else:
-            href = base
+            href += "?" in href and "&" or "?"
+            href += "sort=" + s
         
         links.append({"anchor": sort_criteria[s], "href": href})
         
@@ -79,9 +47,9 @@ def get_facets_links(request, results):
     (links, link) = ([], {})
     
     for facet in results.facets:
-        #links.append(facet.name.title())
-        
         base = get_base_url(request, ["page", facet.name])
+        base_sep = "?" in base and "&" or "?"
+        current_val = request.REQUEST.get(facet.name, None)
         
         link = {
             "anchor": "All", "count": None, "level": "0", "href": base
@@ -89,17 +57,14 @@ def get_facets_links(request, results):
         
         links.append(link)
         
-        val = get_param(request, facet.name, None)
-        
         previous_level = 0
         for value in facet.values:
             indent = False
             undent = False
             clean = value.value
             if clean != '':
-                if clean.find(" ") is not -1:
+                if " " in clean:
                     clean = '"%s"' % clean
-            
                 if previous_level > value.level:
                     undent = True
                 elif previous_level < value.level:
@@ -109,17 +74,15 @@ def get_facets_links(request, results):
                     "anchor": value.name, 
                     "count": value.count, 
                     "level": value.level,
-                    "href": base + facet.name + "=" + clean + "",
-                    'indent': indent,
-                    'undent': undent,
+                    "href": "%s%s%s=%s" % (base, base_sep, facet.name, clean),
+                    "indent": indent,
+                    "undent": undent,
+                    "active": current_val == clean
                 }
-            
-                if val == clean:
-                    link["active"] = True
-            
+                
                 links.append(link)
                 previous_level = value.level
-    
+
     return links
 
 def get_facet_date_links(request, results):
@@ -139,6 +102,7 @@ def get_facet_date_links(request, results):
                 links.append(facet.name.title())
                 
                 base = get_base_url(request, ["page", facet.name])
+                base_sep = "?" in base and "&" or "?"
                 
                 link = {
                     "anchor": "All", "count": None, "level": "0", "href": base
@@ -146,8 +110,7 @@ def get_facet_date_links(request, results):
                 
                 links.append(link)
                 
-                val = get_param(request, facet.name, None)
-                #import ipdb; ipdb.set_trace()    
+                val = request.REQUEST.get(request, facet.name, None)
                 for value in facet.values:
                     clean = value.value
                     #if clean.find(" ") is not -1:
@@ -169,8 +132,9 @@ def get_facet_date_links(request, results):
                         
                     link = {
                         "anchor": date_str, 
-                        "count": value.count, "level": value.level,
-                        "href": base + facet.name + "=" + clean + ""
+                        "count": value.count,
+                        "level": value.level,
+                        "href": "%s%s%s=%s" % (base, base_sep, facet.name, clean),
                     }
                     if val is not None:
                         if urllib.quote(val) == clean:
