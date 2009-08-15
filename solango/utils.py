@@ -41,109 +41,43 @@ def get_sort_links(request):
 
 def get_facets_links(request, results):
     """
-    Returns a list of facet links, allowing users to quickly drill into their
-    search results by fields which support faceting.
+    Returns a dictionary of facet links, allowing users to quickly drill 
+    into their search results by fields which support faceting.
     """
-    (links, link) = ([], {})
-    
+    facets = {}
     for facet in results.facets:
         base = get_base_url(request, ["page", facet.name])
         base_sep = "?" in base and "&" or "?"
         current_val = request.REQUEST.get(facet.name, None)
+        current_val_quoted = current_val and urllib.quote(current_val) or None
         
-        link = {
-            "anchor": "All", "count": None, "level": "0", "href": base
+        facets[facet.name] = {
+            'name'    : facet.name,
+            'base'    : base,
+            'links'   : [],
+            'current' : current_val
         }
-        
-        links.append(link)
         
         previous_level = 0
         for value in facet.values:
             indent = False
             undent = False
-            clean = value.value
+            clean = value.get_encoded_value()
             if clean != '':
-                if " " in clean:
-                    clean = '"%s"' % clean
                 if previous_level > value.level:
                     undent = True
                 elif previous_level < value.level:
                     indent = True
-                    
-                link = {
-                    "anchor": value.name, 
-                    "count": value.count, 
-                    "level": value.level,
-                    "href": "%s%s%s=%s" % (base, base_sep, facet.name, clean),
-                    "indent": indent,
-                    "undent": undent,
-                    "active": current_val == clean
-                }
                 
-                links.append(link)
+                facets[facet.name]['links'].append({
+                    'anchor' : value.name,
+                    'count'  : value.count,
+                    'level'  : value.level,
+                    'href'   : "%s&%s=%s" % (base, facet.name, clean),
+                    'active' : (current_val_quoted == clean)
+                })
                 previous_level = value.level
-
-    return links
-
-def get_facet_date_links(request, results):
-    """
-    Returns a list of facet date links, allowing users to quickly drill into their
-    search results by fields which support faceting.
-    """
-    (links, link) = ([], {})
-    
-    params = results.header.get('params', None)
-    if params is not None:
-        date_gap = params.get('facet.date.gap', None)
-        
-        if date_gap is not None:
-            for facet in results.facet_dates:
-                
-                links.append(facet.name.title())
-                
-                base = get_base_url(request, ["page", facet.name])
-                base_sep = "?" in base and "&" or "?"
-                
-                link = {
-                    "anchor": "All", "count": None, "level": "0", "href": base
-                }
-                
-                links.append(link)
-                
-                val = request.REQUEST.get(facet.name, None)
-                for value in facet.values:
-                    clean = value.value
-                    #if clean.find(" ") is not -1:
-                    clean = urllib.quote('[%s TO %s%s]' % (clean, clean, date_gap))
-                    
-                    date_value = value.name
-                    millisecond_start = date_value.rfind('.')
-                    if millisecond_start > -1:
-                        date_value = date_value[:millisecond_start] + 'Z'
-                    date_obj = datetime.datetime.strptime(date_value, "%Y-%m-%dT%H:%M:%SZ")
-                    date_format = "%B %d %Y"
-                    if 'YEAR' in date_gap:
-                        date_format = "%Y"
-                    elif 'MONTH' in date_gap:
-                        date_format = "%B %Y"
-                        
-                    date_str = datetime.datetime.strftime(date_obj, date_format)
-                    
-                        
-                    link = {
-                        "anchor": date_str, 
-                        "count": value.count,
-                        "level": value.level,
-                        "href": "%s%s%s=%s" % (base, base_sep, facet.name, clean),
-                    }
-                    if val is not None:
-                        if urllib.quote(val) == clean:
-                            link["active"] = True
-                    
-                    links.append(link)
-    
-    return links
-
+    return facets
 
 def create_schema_xml(raw=False):
     import solango

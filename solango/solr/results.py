@@ -4,7 +4,7 @@
 
 from xml.dom import minidom
 from solango.solr import xmlutils
-from solango.solr.facet import Facet
+from solango.solr.facet import Facet, DateFacet
 from solango.log import logger
 from solango import settings 
 from solango import registry
@@ -125,7 +125,7 @@ class SelectResults(Results):
     Results for Solr select requests.
     """
     
-    (count, documents, facets, facet_dates, highlighting, date_gap) = (None, None, None, None, None, None)
+    (count, documents, facets, highlighting, date_gap) = (None, None, None, None, None)
     
     def __init__(self, xml):
         """
@@ -134,7 +134,7 @@ class SelectResults(Results):
         """
         Results.__init__(self, xml)
         
-        (self.documents, self.facets, self.facet_dates, self.highlighting) = ([], [], [], {})
+        (self.documents, self.facets, self.highlighting) = ([], [], {})
         
         self._parse_results()
         
@@ -195,13 +195,15 @@ class SelectResults(Results):
 
         for facet in xmlutils.get_child_nodes(fields, "lst"):
             self.facets.append(Facet(facet))
-            
+        
+        params = self.header.get('params', None)
+        if params is not None:
+            self.date_gap = params.get('facet.date.gap', '+1YEAR') # default to a 1 year gap
+        
         facet_dates = xmlutils.get_child_node(facets, "lst", "facet_dates")
         
         for facet_date in xmlutils.get_child_nodes(facet_dates, "lst"):
-            self.facet_dates.append(Facet(facet_date))
-            
-        self.date_gap = self.header.get('facet.date.gap', '+1YEAR') # default to a 1 year gap
+            self.facets.append(DateFacet(facet_date, self.date_gap))
         
     def _parse_highlighting(self):
         """

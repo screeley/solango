@@ -3,7 +3,8 @@
 #
 from solango.solr import xmlutils
 from solango import settings
-import re
+import urllib
+import datetime
 
 class FacetValue(object):
     """
@@ -31,6 +32,15 @@ class FacetValue(object):
         else:
             n += len(settings.FACET_SEPARATOR)
         self.name = self.name[n:].title()
+        
+    def get_encoded_value(self):
+        """
+        Returns the url-encoded value for inclusion in a URL.
+        """
+        clean = self.value
+        if " " in clean:
+            clean = '"%s"' % clean
+        return urllib.quote(clean)
     
 class Facet(object):
     """
@@ -73,7 +83,7 @@ class Facet(object):
             if v.value == p:
                 return v
         
-        f = FacetValue(p, 0)
+        f = self.create_value(p, 0)
         self.values.append(f)
         
         return f
@@ -104,6 +114,9 @@ class Facet(object):
         if value.parent:
             value.level = value.parent.level + 1
         
+        if value.children:
+            value.value += "*"
+        
         for c in value.children:
             self.recurse_children(c)
     
@@ -130,6 +143,8 @@ class Facet(object):
         for v in values:
             self.recurse_children(v)
     
+    def create_value(self, value, count):
+        return FacetValue(value, count)
     
     def __init__(self, node):
         """
@@ -149,6 +164,48 @@ class Facet(object):
             
             value = xmlutils.get_attribute(c, "name")
             count = xmlutils.get_int(c)
-            self.values.append(FacetValue(value, count))
+            self.values.append(self.create_value(value, count))
         
         self.merge_values()
+
+class DateFacetValue(FacetValue):
+    """
+    An abstraction for a unique date facet value count, returned from Solr.
+    """
+    def __init__(self, value, count, date_gap):
+        """
+        Initialize value and count, resolving name from the value.
+        """
+        self.date_gap = date_gap
+        
+        super(DateFacetValue, self).__init__(value, count)
+        
+        date_value = self.name
+        
+        millisecond_start = date_value.rfind('.')
+        if millisecond_start > -1:
+            date_value = date_value[:millisecond_start] + 'Z'
+        date_obj = datetime.datetime.strptime(date_value, "%Y-%m-%dT%H:%M:%SZ")
+        
+        precision = self.date_gap.lstrip('+-1234567890')
+        date_format = settings.SEARCH_FACET_DATE_FORMATS.get(precision, "%B %d %Y")
+        
+        self.name = datetime.datetime.strftime(date_obj, date_format)
+    
+    def get_encoded_value(self):
+        """
+        Returns the url-encoded value for inclusion in a URL.
+        """
+        clean = self.value
+        if " " in clean:
+            clean = '"%s"' % clean
+        return urllib.quote('[%s TO %s%s]' % (clean, clean, self.date_gap))
+
+class DateFacet(Facet):
+    def __init__(self, facet, date_gap):
+        self.date_gap = date_gap
+        super(DateFacet, self).__init__(facet)
+    
+    def create_value(self, value, count):
+        return DateFacetValue(value, count, self.date_gap)
+        

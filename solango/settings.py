@@ -42,6 +42,13 @@ SEARCH_FACET_PARAMS =  getattr(settings, "SEARCH_FACET_PARAMS", [
     #("facet.date.gap", "+1YEAR"),
 ])
 
+### strftime format strings for displaying faceting links.
+SEARCH_FACET_DATE_FORMATS = getattr(settings, "SEARCH_FACET_DATE_FORMATS", {
+    'DAY': '%e %b %Y',
+    'MONTH': '%B %Y',
+    'YEAR': '%Y',
+})
+
 SEARCH_HL_PARAMS = getattr(settings, "SEARCH_HL_PARAMS" ,[
     ("hl", "true"),      # basic highlighting
     ("hl.fl", "text"),   # What field to highlight

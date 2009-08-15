@@ -52,18 +52,28 @@ if you want to see how they work, otherwise here is how to make use of them::
     >>> value.count
     7
     
-    We create the tree structure based using `get_facet_links` in the
-    in the `utils`. But if you are looking for a dict you can use this::
+
+To make displaying your facets easy in templates, you can use::
+
+    from solango.utils import get_facets_links
+    facets = get_facets_links(request, results)
+
+This returns a dict which looks something like::
+
+    {
+        'author': {
+            'current': None,
+            'base': '/search/?q=spain',
+            'name': 'author',
+            'links': [{'count': 7,
+                       'active': False,
+                       'href': '/search/?q=spain&subject_facet=Mexico&author_facet="Doe, John"',
+                       'anchor': 'Doe, John',
+                       'level': 0}, #...
+               ]
+        }, #...
+    }
     
-    >>> facet_dict = {}
-    >>> for facet in results.facets:
-    >>>     facet_dict[facet.name] = []
-    >>>     for value in facet.values:
-    >>>         facet_dict[facet.name].append({'name':value.name, 'value':value.value, 'count':value.count})
-    >>> facet_dict
-    
-    {u'author': [{'count': 7, 'name': u'Sean Creeley', 'value': u'Sean Creeley'}],
-    u'model': [{'count': 7, 'name': u'Entry', 'value': u'coltrane__entry'},
-            {'count': 0, 'name': u'Link', 'value': u'coltrane__link'}]
-    
-    
+Take a look at the solango/search.html template for an example of 
+how to template your facets using this dict.
+

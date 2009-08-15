@@ -59,13 +59,12 @@ class SearchView(object):
                 params.update(form.cleaned_data)
                 paginator = SearchPaginator(params, request)
                 facets = utils.get_facets_links(request, paginator.results)
-                facet_dates = utils.get_facet_date_links( request, paginator.results)
                 sort_links = utils.get_sort_links(request)
         else:
             form = form_class()
             
         # Get Context
-        context = self.get_context(request, paginator, facets, sort_links, form, facet_dates)
+        context = self.get_context(request, paginator, facets, sort_links, form)
         apply_extra_context(extra_context, context)
         template = self.get_template(request, template_name)
         
@@ -102,15 +101,14 @@ class SearchView(object):
         return loader.get_template(template_name) 
     
     
-    def get_context(self, request, paginator, facets, sort_links, form, facet_dates): 
+    def get_context(self, request, paginator, facets, sort_links, form): 
         """ 
         Returns the Context
         """ 
         return RequestContext(request, {'paginator': paginator,
                                         'facets' : facets,
                                         'form' : form,
-                                        'sort_links' : sort_links,
-                                        'facet_dates': facet_dates }) 
+                                        'sort_links' : sort_links }) 
     
 # View.
 select = SearchView()

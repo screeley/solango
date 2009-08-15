@@ -5,31 +5,31 @@
 <div class="facets">
 <ul class="linkType">
  <li><a href="?">See All Results</a></li>
-{% for link in facets %}
-    
-    {% if link.href %}
-        <li><a class="Facet{{ link.level }} {% if link.active %}active{% endif %}"
-            href="{{ link.href }}">{{ link.anchor }}</a> {% if link.count %} ({{ link.count }}) {% endif %}</li>
-    {% else %}
-        </ul>
-        <ul class="linkType">
-        <li><h3>{{ link }}</h3></li>
-    {% endif %}
-    
-{% endfor %}
-{% for link in facet_dates %}
-    
-    {% if link.href %}
-        <li><a class="Facet{{ link.level }} {% if link.active %}active{% endif %}"
-            href="{{ link.href }}">{{ link.anchor }}</a> {% if link.count %} ({{ link.count }}) {% endif %}</li>
-    {% else %}
-        </ul>
-        <ul class="linkType">
-        <li><h3>{{ link }}</h3></li>
-    {% endif %}
-    
-{% endfor %}
 </ul>
+
+{% for key, value in facets.items %}
+<h3>{{ key }}</h3>
+<ul class="linkType">
+  <li>
+  {% if value.current %}
+    <a class="facet0" href="{{ value.base }}">All</a>
+  {% else %}
+    <span class="facet0 active">All</span>
+  {% endif %}
+  </li>
+  
+  {% for link in value.links %}
+  <li>
+    {% if link.active %}
+      <span class="facet{{ link.level }} active">{{ link.anchor }}</span>
+    {% else %}
+      <a class="facet{{ link.level }}" href="{{ link.href }}">{{ link.anchor }}</a>
+    {% endif %}
+    {% if link.count %} ({{ link.count }}) {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endfor %}
 {% if sort_links %}
 <h3>Sort</h3>
 <ul>
