@@ -110,7 +110,7 @@ def get_facet_date_links(request, results):
                 
                 links.append(link)
                 
-                val = request.REQUEST.get(request, facet.name, None)
+                val = request.REQUEST.get(facet.name, None)
                 for value in facet.values:
                     clean = value.value
                     #if clean.find(" ") is not -1:
