@@ -90,6 +90,20 @@ class SearchWrapper(object):
         res = self.update("\n<add>\n" + xml + "</add>\n")
         return [results.UpdateResults(res), self.commit()]
     
+    def delete_all(self, commit=True):
+        self.delete_by_query(q='*:*', commit=commit)
+
+    def delete_by_query(self, q, commit=True):
+
+        res = self.update(
+            unicode("\n<delete><query>%s</query></delete>\n" % q, "utf-8")
+        )
+        if commit:
+            ret = [results.UpdateResults(res), self.commit()]
+        else:
+            ret = [results.UpdateResults(res),]
+        return ret
+
     def delete(self, documents):
         """
         Deletes the specified list of objects from the search index.  Returns
