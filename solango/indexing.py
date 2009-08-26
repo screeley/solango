@@ -47,10 +47,16 @@ class BaseIndexer(object):
         
         for instance in instances:
             doc = solango.get_document(instance)
-            if (not doc.is_deleted()) and doc.is_indexable(instance):
-                to_index.append(doc)
-            else:
+            if doc.is_deleted():
                 to_delete.append(doc)
+            else:
+                if isinstance(instance, (list, tuple)):
+                    model = get_model_from_key(instance[0])
+                    instance = model.objects.get(pk=instance[1])
+                if doc.is_indexable(instance):
+                    to_index.append(doc)
+                else:
+                    to_delete.append(doc)
             
             if (len(to_index) >= batch_size):
                 solango.connection.add(to_index)
