@@ -3,6 +3,7 @@
 #
 from solango import connection
 from solango import utils
+from math import ceil
 
 class SearchPaginator(object):
     """
@@ -91,7 +92,7 @@ class SearchPaginator(object):
         return 0 < self.results.start
     
     def page_range(self):
-        return range(1, (self.results.count / self.results.rows + 2))
+        return range(1, int(ceil(float(self.results.count) / self.results.rows) + 1))
     
     def has_other_pages(self):
         return self.has_previous() or self.has_next()
