@@ -166,8 +166,8 @@ class Query(dict):
         if not params:
             return None
         
-        facet_params = settings.SEARCH_FACET_PARAMS
-        hl_params = settings.SEARCH_HL_PARAMS
+        facet_params = settings.SEARCH_FACET_PARAMS[:]
+        hl_params = settings.SEARCH_HL_PARAMS[:]
         for key, value in params:
             if key.startswith('facet'):
                 facet_params.append((key, value),)
