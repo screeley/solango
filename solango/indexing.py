@@ -97,7 +97,7 @@ class DBQueuedIndexer(QueuedIndexer):
         from solango.models import IndexQueue
         
         model_key = get_model_key(instance)
-        IndexQueue.objects.create(model_key=model_key, instance_id=instance.id)
+        IndexQueue.objects.create(model_key=model_key, instance_id=instance.pk)
 
     def _get_queued(self):
         """
@@ -111,9 +111,9 @@ class DBQueuedIndexer(QueuedIndexer):
         """
         from solango.models import IndexQueue
         
-        qs = IndexQueue.objects.order_by('-id')[:1]
+        qs = IndexQueue.objects.order_by('-pk')[:1]
         if qs:
-            self._max_indexed_id = qs[0].id
+            self._max_indexed_id = qs[0].pk
         else:
             self._max_indexed_id = None
             return
