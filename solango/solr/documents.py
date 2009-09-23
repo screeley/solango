@@ -36,7 +36,7 @@ moderation options::
 import solango
     
 class PostDocument(solango.SearchDocument):
-    content = solango.fields.TextField(copy=True, field='body')
+    content = solango.fields.TextField(copy=True)
     
     #Overrides the default transform
     def transform_content(self, instance):
