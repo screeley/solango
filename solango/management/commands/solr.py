@@ -43,13 +43,13 @@ class Command(NoArgsCommand):
         solr_fields =options.get('solr_fields')
         start_solr = options.get('start_solr')
         index_queued = options.get('index_queued')
-         
-        from solango import settings
+        
+        from solango import conf
         
         #### SOLR
-        SOLR_SCHEMA_PATH = getattr(settings, 'SOLR_SCHEMA_PATH', None)
-        SOLR_DATA_DIR = getattr(settings, 'SOLR_DATA_DIR', None)
-        SOLR_ROOT = getattr(settings, 'SOLR_ROOT', None)
+        SOLR_SCHEMA_PATH = getattr(conf, 'SOLR_SCHEMA_PATH', None)
+        SOLR_DATA_DIR = getattr(conf, 'SOLR_DATA_DIR', None)
+        SOLR_ROOT = getattr(conf, 'SOLR_ROOT', None)
         
         if solr_fields:
             from solango.utils import create_schema_xml
@@ -108,7 +108,7 @@ Successfully created schema.xml in/at: %s
             
             from solango.utils import reindex
             if not index_batch_size:
-                index_batch_size = getattr(settings,"SOLR_BATCH_INDEX_SIZE")
+                index_batch_size = getattr(conf,"SOLR_BATCH_INDEX_SIZE")
 
             try:
                 # Throws value errors.

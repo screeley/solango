@@ -1,0 +1,62 @@
+.. _multicore:
+
+Solr Multicore
+==============
+There are many ways to configure your solr instance to handle the type of load
+you are going to put on it. Solango gives you a few different choices in how to
+configure Solr. Please read carefully and decide which is best for you and your
+spefic use case.
+
+Flatten
+-------
+By default `solango` runs off one instance of Solr and will flatten your schema
+into one index. It is explained on the Solr wiki under `Flatten Data Into a 
+Single Instance <http://wiki.apache.org/solr/MultipleIndexes>`_. The basic gist
+of it is that if you have two models book and movie you may need the 
+following::
+
+    Book:
+    
+    title
+    author
+    release (date)
+    
+    Movie:
+
+    title
+    director
+    release (date)
+    
+This would be flattened into one schema that looks like this::
+
+    <field name="title" ... /> 
+    <field name="author"  ... />
+    <field name="director"  ... />
+    <field name="release "  ... />
+
+Through `solango` documents it knows how to render the two documents 
+differently based on the `type` key that we automatically add.
+
+Multiple Instances
+------------------
+If you do not want to flatten the index there is the ability to add multiple
+instance. Books would be stored in one instance of Solr and movies in another.
+This means that you will need to have Solr running on two different boxes or at
+the very least different ports on the same box.
+
+Multi Core
+----------
+Solr can run multiple cores on the same instance of Solr. Meaning that there
+are `n` number different `schema.xml` and `data` directories on a single
+instance. This can allow separation of data without having multiple instances.
+
+
+Conclusion
+----------
+In most cases flattening the data is the best way to approach using Solr. It
+gives you the ability to return multiple document type from one search without
+having to make calls to separate instances of Solr. If you choose the other
+route please read the MultInstance and MultiCore index documentation carefully. 
+
+
+

@@ -6,10 +6,16 @@ import re
 from  datetime import datetime
 from time import strptime
 from django.utils.encoding import smart_unicode
+
 from django.conf import settings as django_settings
-from solango import settings
-from solango.solr import get_model_key
+from solango import conf
+from solango.solr import get_instance_key
 from solango.solr import utils
+
+
+__all__ = ["Field", "DateField", "DateTimeField", "CharField", "TextField", "IntegerField",
+            "BooleanField", "UrlField", "SiteField", "ModelField", 
+            "FloatField", "DoubleField", "LongField"]
 
 class Field(object):
     """
@@ -228,20 +234,20 @@ class PrimaryKeyField(CharField):
         super(PrimaryKeyField, self).__init__(*args, **kwargs)
     
     def make_key(self, model_key, pk):
-        return "%s%s%s" % (model_key, settings.SEARCH_SEPARATOR, pk)
+        return "%s%s%s" % (model_key, conf.SEARCH_SEPARATOR, pk)
         
-    def transform(self, model):
+    def transform(self, instance):
         """
         Returns a unique identifier string for the specified object.
         
         This avoids duplicate documents
         """
-        self.value = self.make_key(get_model_key(model), model.pk)
+        self.value = self.make_key(get_instance_key(instance), instance.pk)
         
         return unicode(self)
     
     def clean(self):
-        self.value = self.value.split(settings.SEARCH_SEPARATOR)[-1]
+        self.value = self.value.split(conf.SEARCH_SEPARATOR)[-1]
 
 class SiteField(IntegerField):
     def __init__(self, *args, **kwargs):
@@ -258,8 +264,8 @@ class ModelField(CharField):
         kwargs.update({'required' : True})
         super(ModelField, self).__init__(name='id', *args, **kwargs)
 
-    def transform(self, value_or_model):
-        self.value = get_model_key(value_or_model)
+    def transform(self, instance):
+        self.value = get_instance_key(instance)
         return unicode(self)
 
 class FloatField(Field):

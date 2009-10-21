@@ -6,8 +6,8 @@ from xml.dom import minidom
 from solango.solr import xmlutils
 from solango.solr.facet import Facet, DateFacet
 from solango.log import logger
-from solango import settings 
-from solango import registry
+from solango import conf 
+from solango.registry import documents
 import urllib
 
 class SolrException(Exception):
@@ -169,7 +169,7 @@ class SelectResults(Results):
         
         for d in xmlutils.get_child_nodes(result, "doc"):
             data_dict = xmlutils.get_dictionary(d)
-            document = registry[data_dict['model']](data_dict)
+            document = documents[data_dict['model']](data_dict)
             self.documents.append(document)
         
     def _parse_facets(self):
@@ -219,7 +219,7 @@ class SelectResults(Results):
         self.highlighting = xmlutils.get_dictionary(highlighting)
         for d in self.documents:
             #TODO: Ugly
-            model_key = settings.SEARCH_SEPARATOR.join([d.fields['model'].value, d.pk_field.value])
+            model_key = conf.SEARCH_SEPARATOR.join([d.fields['model'].value, d.pk_field.value])
             for key, value in self.highlighting[model_key].items():
                 d.highlight += ' ' + ' '.join(value)
                 d.fields[key].highlight = ' '.join(value)

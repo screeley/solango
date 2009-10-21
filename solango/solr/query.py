@@ -23,7 +23,7 @@ from django.utils.encoding import smart_str
 
 from solango.solr import utils
 from solango.solr.utils import CleverDict
-from solango import settings
+from solango import conf
 import urllib
 
 
@@ -124,7 +124,7 @@ class Query(dict):
         self.fl = []
         self.start = 0
         self.rows = 10
-        self.op = settings.SOLR_DEFAULT_OPERATOR
+        self.op = conf.SOLR_DEFAULT_OPERATOR
         self.clean(*args, **kwargs)
 
     #So we can do url.url
@@ -166,8 +166,8 @@ class Query(dict):
         if not params:
             return None
         
-        facet_params = settings.SEARCH_FACET_PARAMS[:]
-        hl_params = settings.SEARCH_HL_PARAMS[:]
+        facet_params = conf.SEARCH_FACET_PARAMS[:]
+        hl_params = conf.SEARCH_HL_PARAMS[:]
         for key, value in params:
             if key.startswith('facet'):
                 facet_params.append((key, value),)

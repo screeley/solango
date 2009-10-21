@@ -1,0 +1,11 @@
+.. _forms:
+
+Forms
+=====
+Once in awhile you will want to add things to a Solr schema that does not have
+a Model associated with it, i.e. a user submitted web based form. `solango` has
+the ability to index content directly from Django Forms. Here is an example of
+a simple form and it's associated search document::
+
+    from django import form
+    

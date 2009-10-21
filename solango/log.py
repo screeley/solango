@@ -7,7 +7,7 @@ This module provides unified logging via the logging module.
 """
 import logging
 import logging.config
-from solango.settings import LOGGING_CONF
+from solango.conf import LOGGING_CONF
 
 class LogManager:
     """

@@ -1,4 +1,7 @@
+import uuid
+
 from django import forms
+
 import solango
 from solango.solr import get_model_from_key
 
@@ -16,3 +19,19 @@ class SearchForm(forms.Form):
         if not q:
             raise forms.ValidationError("You cannot query for an empty string")
         return q
+
+class BaseSolangoForm(forms.Form):
+    """
+    Base Solango Form
+    -----------------
+    If you are using Solango without a DB backend you should subclass this
+    form. It make sure the object has an id.
+    """
+    
+    id = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super(BaseSolangoForm, self).__init__(*args, **kwargs)
+        #If the form is bound, generate a random ID.
+        if self.is_bound and not self.data.has_key("id"):
+            self.data["id"] = str(uuid.uuid4())

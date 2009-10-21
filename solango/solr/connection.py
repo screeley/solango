@@ -5,7 +5,7 @@
 from datetime import datetime, timedelta
 import urllib2
 
-from solango import settings
+from solango import conf
 from solango.log import logger
 from solango.solr import results
 from solango.solr.query import Query
@@ -21,13 +21,13 @@ class SearchWrapper(object):
     (available, heartbeat) = (False, None)
     (update_url, select_url, ping_urls) = (None, None, None)
     
-    def __init__(self):
+    def __init__(self, update_url, select_url, ping_urls):
         """
         Resolves configuration and instantiates a Log for this object.
         """
-        self.update_url = settings.SEARCH_UPDATE_URL
-        self.select_url = settings.SEARCH_SELECT_URL
-        self.ping_urls = settings.SEARCH_PING_URLS
+        self.update_url = update_url
+        self.select_url = select_url
+        self.ping_urls = ping_urls
   
         self.heartbeat = datetime(1970, 01, 01)
     
@@ -69,20 +69,15 @@ class SearchWrapper(object):
                 xml += d.delete()
         return xml
     
-    def add(self, documents):
+    def add(self, xml):
         """
         Adds the specified list of objects to the search index.  Returns a
         two-element List of UpdateResults; the first element corresponds to
         the add operation, the second to the subsequent commit operation.
         """
-        if not documents:
-            raise ValueError        
-        
-        xml = self.get_document_xml(documents, ADD)
-        
-        if not len(xml):
-            return
-        
+        if not xml:
+            raise ValueError("No XML to Add")
+
         if not self.is_available():
             logger.info("add: Search is unavailable.")
             return

@@ -49,11 +49,13 @@ And finally register it for searching:
 from django.utils.datastructures import SortedDict
 from django.db.models.base import ModelBase, Model
 from django.forms.models import model_to_dict
+from django.forms.forms import BaseForm
 from django.template.loader import render_to_string
 
-from solango import fields as search_fields
-from solango.solr import get_model_from_key
-from solango import settings
+from solango.solr import fields as search_fields
+from solango.solr import get_instance_key
+from solango.solr.utils import idict
+from solango import conf
 
 from copy import deepcopy
 
@@ -113,69 +115,83 @@ class DeclarativeFieldsMetaclass(type):
         return new_class
 
 class BaseSearchDocument(object):
+    """
+    BaseSearchDocument
+    ------------------
+    Base Search Document for solango
+    """
+    
+    key = None
+    index = None
+    
     def __init__(self, arg):
         """
-        Takes a model, dict, or tuple.
+        Takes a model, form or dict.
         
-        for a model it assumes that you are trying to create a document from the values
+        For a model or form it assumes that you are trying to create a document
+        from the values
         
-        for a dict it assumes that you recieved results from solr and you want to make a 
-        python object representation of the model    
-        
-        For a tuple of the form (model_key, instance_id), it creates a document
-        from the corresponding model instance. if the instance does not exist, it
-        will succeed. This is useful for creating documents to remove from the
-        index, after the instance has already been deleted.
-            
+        For a dict it assumes that you received results from Solr and you want 
+        to make a Python object representation of the model     
         """
         
         self.fields = deepcopy(self.base_fields)
         self.pk_field = None
-        self._model = None
+        
+        self._instance = None
+        self.orginal_dict = {}
+        
         self.data_dict = {}
         self.highlight = ""
         self.boost = ""
         self._transformed = False
-        self._is_deleted = False
-
-        # If it's a model, set the _model and create a dictionary from the fields
+        print arg.__class__
+        #Model
         if isinstance(arg, Model):
-            #make it into a dict.
-            self._model = arg
+            self._instance = arg
             self.data_dict = model_to_dict(arg)
+        #Form
+        elif isinstance(arg, BaseForm):
+            if not arg.is_valid():
+                raise AttributeError("Form is not valid %s" % 
+                                     ["%s:%s" % (key, "".join(value))
+                                       for key, value in arg.errors] )
+            if not arg.cleaned_data.has_key("id"):
+                raise AttributeError("Solango requires that all forms have"+ \
+                                " an id field. subclass forms.BaseSolangoForm")
+            
+            #We need a primary key. This seems to to the trick
+            instance = idict(arg.cleaned_data)
+            instance.pk = instance.id
+            instance.model = get_instance_key(arg)
+            
+            self._instance = instance
+            self.data_dict = arg.cleaned_data
+        #Dictionary
         elif isinstance(arg, dict):
             self.data_dict = arg
-        elif isinstance(arg, (tuple, list)):
-            if len(arg) != 2:
-                raise ValueError('Tuple argument must be of the form (model_key, instance_id)')
-            
-            model = get_model_from_key(arg[0])
-            try:
-                self._model = model.objects.get(pk=arg[1])
-            except model.DoesNotExist:
-                self._is_deleted = True
+        #Error
         else:
-            raise ValueError('Argument must be a Model, a dictionary or a tuple')
+            raise ValueError('Argument must be a Model, Form or a Dictionary')
         
-        # Iterate through fields and get value
+        # Find Primary Key Field
         for field in self.fields.values():
             #Save value
             if isinstance(field, search_fields.PrimaryKeyField):
                 self.pk_field = field
                 break
-        
+    
         if not self.pk_field:
             raise NoPrimaryKeyFieldException('Search Document needs a Primary Key Field')
+
         
-        if self._model:
+        if self._instance:
             self._transform_field(self.pk_field)
-            self.boost = self.get_boost(self._model)
+            self.boost = self.get_boost(self._instance)
+        
         elif self.data_dict:
             self.clean()
             self._transformed = True
-            self.boost = self.get_boost(self.get_model_instance())
-        else:
-            self.pk_field.value = self.pk_field.make_key(arg[0], arg[1])
     
     def __getitem__(self, name):
         "Convenience method for templates"
@@ -188,18 +204,18 @@ class BaseSearchDocument(object):
     def _transform_field(self, field):
         value = None
         try:
-            value = getattr(self, 'transform_%s' % field.name)(self._model)
+            value = getattr(self, 'transform_%s' % field.name)(self._instance)
             field.value = value
         except AttributeError:
             #no transform rely on the field
-            field.transform(self._model)
+            field.transform(self._instance)
 
     def transform(self):
         """
         Takes an model instance and transforms it into a Search Document
         """
-        if not self._model:
-            raise ValueError('No model to transform into a Search Document')
+        if not self._instance:
+            raise ValueError('No Instance to transform into a Search Document')
         
         if not self._transformed:
             for field in self.fields.values():
@@ -236,34 +252,32 @@ class BaseSearchDocument(object):
         """
         Returns the Solr document XML representation of this Document.
         """
-        return self.to_xml()
+        return self.to_add_xml()
     
     def delete(self):
-        return self.to_xml(True)
+        return self.index.delete(self)
     
     def add(self):
-        if self.is_indexable(self._model):
-            return self.to_xml()
+        if self.is_indexable(self._instance):
+            self.index.add(self)
         else:
             return ''
     
-    def to_xml(self, delete=False):
-        doc = None
-        if delete:
-            #Delete looks like <id>1</id>
-            doc = u"<id>%s</id>" % (self.pk_field.value,)
+    def to_add_xml(self):
+        self.transform()
+        doc = u"".join([unicode(field) for field in self.fields.values()])
+        
+        if self.boost:
+            boost_attr = ' boost="%s"' % self.boost
         else:
-            self.transform()
-            doc = u"".join([unicode(field) for field in self.fields.values()])
-            
-            if self.boost:
-                boost_attr = ' boost="%s"' % self.boost
-            else:
-                boost_attr = ''
-            
-            doc = u"<doc%s>\n%s</doc>\n" % (boost_attr, doc)
+            boost_attr = ''
+        
+        doc = u"<doc%s>\n%s</doc>\n" % (boost_attr, doc)
         
         return doc
+
+    def to_delete_xml(self):
+        return u"<id>%s</id>" % self.pk_field.value
 
     def render_html(self):
         return render_to_string(self.template, {'document' : self})
@@ -274,31 +288,15 @@ class BaseSearchDocument(object):
         """
         return True
     
-    def is_deleted(self):
-        """
-        If the document was created with a tuple (model_key, instance_id)
-        and the model instance no longer exists, returns True.
-        """
-        return self._is_deleted
-
-    def get_model_instance(self):
-        """
-        Returns the model instance that the document refers to.
-        """
-        if self.data_dict:
-            model = get_model_from_key(self.data_dict['model'])
-            id = self.data_dict['id'].split(settings.SEARCH_SEPARATOR)[2]
-            
-            return model.objects.get(pk=id)
-        elif self._model:
-            return self._model
-        return None
-
     def get_boost(self, instance):
         """
         Override this to specify a custom per-document boost.
         """
         return ''
+
+    @classmethod
+    def set_index(cls, index):
+        cls.index = index
 
 class SearchDocument(BaseSearchDocument):
     id      = search_fields.PrimaryKeyField()

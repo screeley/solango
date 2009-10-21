@@ -2,7 +2,7 @@
 # Copyright 2008 Optaros, Inc.
 #
 import urllib, datetime
-from solango import settings
+from solango import conf
 
 def get_base_url(request, exclude=[]):
     """
@@ -22,7 +22,7 @@ def get_sort_links(request):
     """
     links = []
     
-    sort_criteria = settings.SEARCH_SORT_PARAMS
+    sort_criteria = conf.SEARCH_SORT_PARAMS
     
     sort = request.REQUEST.get("sort", "score desc")
     
@@ -81,11 +81,11 @@ def get_facets_links(request, results):
 
 def create_schema_xml(raw=False):
     import solango
-    from solango.settings import SOLR_DEFAULT_OPERATOR
+    from solango.conf import SOLR_DEFAULT_OPERATOR
     from django.template.loader import render_to_string
     fields = {}
     
-    for doc in solango.registry.values():
+    for doc in solango.documents.values():
         fields.update(doc.base_fields)
     
     doc, copy_doc = "", ""

@@ -2,7 +2,7 @@
 # Copyright 2008 Optaros, Inc.
 #
 from solango.solr import xmlutils
-from solango import settings
+from solango import conf
 import urllib
 import datetime
 
@@ -18,19 +18,19 @@ class FacetValue(object):
         (self.value, self.count) = (value, count)
         (self.parent, self.children, self.level) = (None, [], 0)
         
-        n = self.value.rfind(settings.SEARCH_SEPARATOR)
+        n = self.value.rfind(conf.SEARCH_SEPARATOR)
         if n == -1:
             n = 0
         else:
-            n += len(settings.SEARCH_SEPARATOR)
+            n += len(conf.SEARCH_SEPARATOR)
         self.name = self.value[n:].title()
         
         
-        n = self.name.rfind(settings.FACET_SEPARATOR)
+        n = self.name.rfind(conf.FACET_SEPARATOR)
         if n == -1:
             n = 0
         else:
-            n += len(settings.FACET_SEPARATOR)
+            n += len(conf.FACET_SEPARATOR)
         self.name = self.name[n:].title()
         
     def get_encoded_value(self):
@@ -72,7 +72,7 @@ class Facet(object):
         Returns the best-fit immediate parent for the specified value, or
         None if value does not appear to have a parent.
         """
-        n = value.value.rfind(settings.FACET_SEPARATOR)
+        n = value.value.rfind(conf.FACET_SEPARATOR)
         
         if n == -1:
             return None
@@ -188,7 +188,7 @@ class DateFacetValue(FacetValue):
         date_obj = datetime.datetime.strptime(date_value, "%Y-%m-%dT%H:%M:%SZ")
         
         precision = self.date_gap.lstrip('+-1234567890')
-        date_format = settings.SEARCH_FACET_DATE_FORMATS.get(precision, "%B %d %Y")
+        date_format = conf.SEARCH_FACET_DATE_FORMATS.get(precision, "%B %d %Y")
         
         self.name = datetime.datetime.strftime(date_obj, date_format)
     

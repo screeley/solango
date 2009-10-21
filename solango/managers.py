@@ -10,7 +10,7 @@ Post.search.filter()
 
 """
 from django.db import models
-from solango import connection, get_model_key
+from solango import connection, get_instance_key
 
 class SearchManager(models.Manager):
     
@@ -22,7 +22,7 @@ class SearchManager(models.Manager):
             representation.
         
         """
-        kwargs['model'] = get_model_key(self.model)
+        kwargs['model'] = get_instance_key(self.model)
         results = connection.select(*args, **kwargs)
         ids = [doc.pk_field.value for doc in results.documents]
         return self.in_bulk(ids)

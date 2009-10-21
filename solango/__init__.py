@@ -1,66 +1,50 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
-# django_settings so when we do  solango import settings we don't get confused
-from django.conf import settings as django_settings
-from django.db.models import signals
-from django.db.models.base import ModelBase
 
-registry = {}
-
-#Fields so we can do run things like solango.CharField
-from solango.solr import fields
-from solango.solr import get_model_key
-from solango.solr.connection import SearchWrapper
+from solango.solr.fields import *
 from solango.solr.documents import SearchDocument
-from solango.indexing import indexer
+from solango.solr.indexes import Index
+from solango.registry import documents
 
-class AlreadyRegistered(Exception):
-    pass
 
-class NotRegistered(Exception):
-    pass
-
-connection = SearchWrapper()
-SearchDocument = SearchDocument
-
-def register(model_or_iterable, search_document=None, connect_signals=True):
-    if isinstance(model_or_iterable, ModelBase):
-        model_or_iterable = [model_or_iterable]
-    for model in model_or_iterable:
-        #Register the model
-        if model in registry:
-            raise AlreadyRegistered('%s has already been registered by search' % model)
-        if not search_document:
-            #Default Search Document if no document is specified.
-            search_document = SearchDocument
-        key = get_model_key(model)
-        registry[key] = search_document
-        if connect_signals:
-            #Hook Up The Signals
-            signals.post_save.connect(indexer.post_save, model)
-            signals.post_delete.connect(indexer.post_delete, model)
-
-for a in django_settings.INSTALLED_APPS:
-    try:
-        """
-        This will call all the fun things in the search documents
-        """
-        module = __import__(a + '.search', {}, {}, [''])
-    except ImportError, e:
-        pass
-
-def get_document(instance_or_tuple):
+#### Taken from django.contrib.admin.__init__.py
+def autodiscover():
     """
-    Helper to get document from either model instance,
-    or tuple in the form (model_key, instance_id)
+    Auto-discover INSTALLED_APPS search.py modules and fail silently when 
+    not present. This forces an import on them to register any search bits they
+    may want.
     """
-    if isinstance(instance_or_tuple, tuple):
-        key = instance_or_tuple[0]
-    else:
-        key = get_model_key(instance_or_tuple)
-    
-    if key not in registry.keys():
-        raise NotRegistered('Instance not reqistered with Solango')
-    
-    return registry[key](instance_or_tuple)
+    import imp
+    from django.conf import settings
+
+    for app in settings.INSTALLED_APPS:
+        # For each app, we need to look for an admin.py inside that app's
+        # package. We can't use os.path here -- recall that modules may be
+        # imported different ways (think zip files) -- so we need to get
+        # the app's __path__ and look for admin.py on that path.
+
+        # Step 1: find out the app's __path__ Import errors here will (and
+        # should) bubble up, but a missing __path__ (which is legal, but weird)
+        # fails silently -- apps that do weird things with __path__ might
+        # need to roll their own admin registration.
+        try:
+            app_path = __import__(app, {}, {}, [app.split('.')[-1]]).__path__
+        except AttributeError:
+            continue
+
+        # Step 2: use imp.find_module to find the app's admin.py. For some
+        # reason imp.find_module raises ImportError if the app can't be found
+        # but doesn't actually try to import the module. So skip this app if
+        # its admin.py doesn't exist
+        try:
+            imp.find_module('search', app_path)
+        except ImportError:
+            continue
+
+        # Step 3: import the app's admin file. If this has errors we want them
+        # to bubble up.
+        __import__("%s.search" % app)
+
+if not documents:
+    autodiscover()
