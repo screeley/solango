@@ -84,8 +84,9 @@ Successfully created schema.xml in/at: %s
                 """ % path
         
         if flush_solr:
-            import solango
-            if solango.connection.is_available():
+            from solango import Index
+            index = Index()
+            if index.ping():
                 raise CommandError("Flush has a tendency to fail if Solr is running. Please shut it down first.")
             
             if SOLR_DATA_DIR:
@@ -102,8 +103,9 @@ Successfully created schema.xml in/at: %s
                 raise CommandError("Path does not exist: %s" % path)
         
         if index_solr:
-            import solango
-            if not solango.connection.is_available():
+            from solango import Index
+            index = Index()
+            if index.ping():
                 raise CommandError("Solr connection is not available")
             
             from solango.utils import reindex

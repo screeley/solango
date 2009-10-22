@@ -2,89 +2,46 @@
 # Copyright 2008 Optaros, Inc.
 #
 
+import urllib
+
 from xml.dom import minidom
-from solango.solr import xmlutils
+
+from django.utils import simplejson
+
 from solango.solr.facet import Facet, DateFacet
 from solango.log import logger
 from solango import conf 
 from solango.registry import documents
-import urllib
+from solango.solr import xmlutils
+from solango.exceptions import SolrException
 
-class SolrException(Exception):
-    pass
 
 class Results(object):
     """
-    Results instances parse Solr response XML into Python objects.  A Solr
+    Results
+    -------
+    Results instances parse Solr response JSON into Python objects. A Solr
     response contains a header section and, optionally, a result section.
     For update requests, the result section is generally omitted.
-    
-    <response>
-      <lst name="responseHeader">
-        <int name="status">0</int>
-        <int name="QTime">12</int>
-        <lst name="params">
-          <str name="q">test</str>
-          ...
-        </lst>
-        ...
-      </lst>
-      <result name="response" numfound="1" start="0">
-        <doc>
-          <str name="id">document_id</str>
-          <str name="text">some test text</str>
-          ...
-        </doc>
-      </result>
-      <lst name="facet_counts">
-        <lst name="facet_fields">
-          <lst name="some field">
-            <int name="some value">2</int>
-            ...
-          </lst>
-        </lst>
-      </lst>
-      <lst name="highlighting">
-        <lst name="document_id">
-          <arr name="text">
-            <str>some <em>test</em> text</str>
-            ...
-          </arr>
-        </lst>
-        ...
-      </lst>
-    </response>
-    
-    See http://wiki.apache.org/solr/XMLResponseFormat
+
+    See http://wiki.apache.org/solr/SolJSON
     """
     
-    _doc = None
+    _json = {}
     header = None
     rows = 10
     start = 0 
-        
-    def _parse_header(self):
-        """
-        Parses the results header into the header dictionary.
-        """
-        header = xmlutils.get_child_node(self._doc.firstChild, "lst", "responseHeader")
-        
-        if not header:
-            raise ValueError, "Results contained no header."
-        
-        self.header = xmlutils.get_dictionary(header)
-        #logger.debug("Parsed %d header fields." % len(self.header))
     
-    def __init__(self, xml):
+    def __init__(self, json):
         """
         Parses the provided XML body and initialize the header dictionary.
         """
-        if not xml:
-            raise ValueError, "Invalid or missing XML"
+        if not json:
+            raise ValueError, "Invalid or missing JSON"
         
-        self._doc = minidom.parseString(xml)
+        self._json = simplejson.loads(json)
         
-        self._parse_header()
+        self.header = self._json["responseHeader"]
     
     @property
     def status(self):
@@ -115,26 +72,41 @@ class UpdateResults(Results):
     """
     Results for Solr update requests.
     """
+    
+    
     def __init__(self, xml):
-        Results.__init__(self, xml)
+        """
+        Parses the provided XML body and initialize the header dictionary.
+        """
+        if not xml:
+            raise ValueError, "Invalid or missing XML"
         
-        self._doc.unlink()
+        doc = minidom.parseString(xml)
+        
+        header = xmlutils.get_child_node(doc.firstChild, "lst", "responseHeader")
+        
+        doc.unlink()
+        
+        self.header = xmlutils.get_dictionary(header)
     
 class SelectResults(Results):
     """
     Results for Solr select requests.
     """
     
-    (count, documents, facets, highlighting, date_gap) = (None, None, None, None, None)
+    count = None
+    date_gap = None
     
-    def __init__(self, xml):
+    def __init__(self, json):
         """
         Parses the provided XML body, including documents, facets, and
         highlighting information.  See Results.__init__(self, xml).
         """
-        Results.__init__(self, xml)
+        Results.__init__(self, json)
         
-        (self.documents, self.facets, self.highlighting) = ([], [], {})
+        self.documents = []
+        self.facets = [] 
+        self.highlighting = {}
         
         self._parse_results()
         
@@ -142,67 +114,57 @@ class SelectResults(Results):
         
         self._parse_highlighting()
         
-        self._doc.unlink()
-        
     def _parse_header(self):
-        Results._parse_header(self)
         self.rows = int(self.header['params']['rows'])
         self.start = int(self.header['params']['start'])
-    
-    def _get_result_node(self):
-        """
-        Returns the result Node from this Result's DOM tree.
-        """
-        return xmlutils.get_child_node(self._doc.firstChild, "result")
-      
+          
     def _parse_results(self):
         """
         Parse the results array into the documents list.  Each resulting
         document element is a dictionary. 
         """
-        result = self._get_result_node()
+        result = self._json.get("response", None)
         
         if not result:
             raise ValueError, "Results contained no result."
         
-        self.count = int(xmlutils.get_attribute(result, "numFound"))
+        self.count = result["numFound"]
         
-        for d in xmlutils.get_child_nodes(result, "doc"):
-            data_dict = xmlutils.get_dictionary(d)
-            document = documents[data_dict['model']](data_dict)
+        for d in result["docs"]:
+            document = documents[d['model']](d)
             self.documents.append(document)
         
     def _parse_facets(self):
         """
         Parses the facet counts into this Result's facets list.
         """
-        result = self._get_result_node()
-        facets =  xmlutils.get_sibling_node(result, "lst", "facet_counts")
-        
+
+        facets = self._json.get('facet_counts', None)
         
         if not facets:
             return None
         
-        fields = xmlutils.get_child_node(facets, "lst", "facet_fields")
+        fields = self._json.get("facet_fields", None)
         
         if not fields:
             return None
                     
-        exceptions = xmlutils.get_child_node(facets, 'str')
+        #exceptions = xmlutils.get_child_node(facets, 'str')
         
-        if exceptions:
-            raise SolrException('There was a java exception:  %s' % exceptions.lastChild.wholeText)
+        #if exceptions:
+        #    raise SolrException('There was a java exception:  %s' % exceptions.lastChild.wholeText)
 
-        for facet in xmlutils.get_child_nodes(fields, "lst"):
+        for facet in fields:
             self.facets.append(Facet(facet))
         
         params = self.header.get('params', None)
         if params is not None:
             self.date_gap = params.get('facet.date.gap', '+1YEAR') # default to a 1 year gap
         
-        facet_dates = xmlutils.get_child_node(facets, "lst", "facet_dates")
         
-        for facet_date in xmlutils.get_child_nodes(facet_dates, "lst"):
+        facet_dates = self._json.get("facet_dates", [])
+        
+        for facet_date in facet_dates:
             self.facets.append(DateFacet(facet_date, self.date_gap))
         
     def _parse_highlighting(self):
@@ -211,12 +173,11 @@ class SelectResults(Results):
         Also iterate over this Result's documents, inserting highlighting
         elements to their owning documents.
         """
-        highlighting = xmlutils.get_child_node(self._doc.firstChild, "lst", "highlighting")
+        self.highlighting = self._json.get("highlighting", None)
         
-        if not highlighting:
-            return
-        
-        self.highlighting = xmlutils.get_dictionary(highlighting)
+        if not self.highlighting:
+            return None
+
         for d in self.documents:
             #TODO: Ugly
             model_key = conf.SEARCH_SEPARATOR.join([d.fields['model'].value, d.pk_field.value])

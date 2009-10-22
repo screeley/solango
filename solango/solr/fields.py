@@ -132,7 +132,7 @@ class Field(object):
         """
         If the transform messed up the data this is a way of getting it back to normal
         """
-        if isinstance(self.value, list):
+        if isinstance(self.value, list) and self.multi_valued is False:
             self.value = ' '.join(self.value)
     
     def highlighting(self, limit=100):
@@ -168,26 +168,14 @@ class CharField(Field):
     dynamic_suffix = "s"
     type = "string"
     
-    def clean(self):
-        super(CharField, self).clean()
-        self.value = unicode(self.value)
-
 class TextField(Field):
     dynamic_suffix = "t"
     type="text"
     
-    def clean(self):
-        super(TextField, self).clean()
-        self.value = unicode(self.value)
-
 class SolrTextField(Field):
     dynamic_suffix = "t"
     type="text"
-    
-    def clean(self):
-        super(SolrTextField, self).clean()
-        self.value = unicode(self.value)
-    
+        
     def transform(self, model):
         pass
 
@@ -281,7 +269,7 @@ class DoubleField(Field):
     type = "double"
     
     def clean(self):
-        if not isinstance(self.value, float):
+        if not isinstance(self.value, float) and not self.muti_valued:
             self.value = float(self.value)
         
 class LongField(Field):
@@ -289,5 +277,5 @@ class LongField(Field):
     type = "long"
 
     def clean(self):
-        if not isinstance(self.value, long):
+        if not isinstance(self.value, long) and not self.muti_valued:
             self.value = long(self.value)

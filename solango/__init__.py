@@ -6,6 +6,7 @@ from solango.solr.fields import *
 from solango.solr.documents import SearchDocument
 from solango.solr.indexes import Index
 from solango.registry import documents
+from solango.exceptions import *
 
 
 #### Taken from django.contrib.admin.__init__.py

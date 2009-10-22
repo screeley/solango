@@ -124,6 +124,7 @@ class Query(dict):
         self.fl = []
         self.start = 0
         self.rows = 10
+        self.wt = "json"
         self.op = conf.SOLR_DEFAULT_OPERATOR
         self.clean(*args, **kwargs)
 

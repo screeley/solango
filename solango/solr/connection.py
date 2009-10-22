@@ -147,8 +147,8 @@ class SearchWrapper(object):
         
         (req, res) = (urllib2.Request(url, data), None)
         
-        req.add_header("Content-type", "text/xml; charset=utf-8")
-        
+        req.add_header("Content-type", "application/json; charset=utf-8")
+        print url
         try:
             res = urllib2.urlopen(req).read()
         except StandardError, e:
