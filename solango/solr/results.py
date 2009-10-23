@@ -144,7 +144,7 @@ class SelectResults(Results):
         if not facets:
             return None
         
-        fields = self._json.get("facet_fields", None)
+        fields = facets.get("facet_fields", None)
         
         if not fields:
             return None
@@ -154,8 +154,8 @@ class SelectResults(Results):
         #if exceptions:
         #    raise SolrException('There was a java exception:  %s' % exceptions.lastChild.wholeText)
 
-        for facet in fields:
-            self.facets.append(Facet(facet))
+        for name, values in fields.items():
+            self.facets.append(Facet(name, values))
         
         params = self.header.get('params', None)
         if params is not None:

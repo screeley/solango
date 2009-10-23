@@ -7,7 +7,7 @@ from solango.solr.documents import SearchDocument
 from solango.solr.indexes import Index
 from solango.registry import documents
 from solango.exceptions import *
-
+from solango.conf import SEARCH_SEPARATOR
 
 #### Taken from django.contrib.admin.__init__.py
 def autodiscover():

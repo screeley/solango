@@ -51,6 +51,7 @@ from django.db.models.base import ModelBase, Model
 from django.forms.models import model_to_dict
 from django.forms.forms import BaseForm
 from django.template.loader import render_to_string
+from django.utils.functional import curry
 
 from solango.solr import fields as search_fields
 from solango.solr import get_instance_key
@@ -97,12 +98,15 @@ def get_model_declared_fields(bases, attrs, with_base_fields=True):
         field.name = name
     
     media = attrs.get('Media', None)
-    template = getattr(media, 'template', None)
-    if template:
-        attrs['template'] = template
+    templates = getattr(media, 'templates', [])
+    if templates:
+        attrs['templates'] = templates
+    
+    media = attrs.get('Meta', None)
+    model_key = getattr(media, 'model_key', None)
+    attrs['model_key'] = model_key
     
     return SortedDict(fields)
-
 
 class DeclarativeFieldsMetaclass(type):
     """
@@ -124,7 +128,7 @@ class BaseSearchDocument(object):
     key = None
     index = None
     
-    def __init__(self, arg):
+    def __init__(self, arg, initial=False):
         """
         Takes a model, form or dict.
         
@@ -162,11 +166,13 @@ class BaseSearchDocument(object):
             
             #We need a primary key. This seems to to the trick
             instance = idict(arg.cleaned_data)
-            instance.pk = instance.id
             instance.model = get_instance_key(arg)
             
             self._instance = instance
             self.data_dict = arg.cleaned_data
+        elif initial:
+            self._instance = idict(arg)
+            self.data_dict = arg
         #Dictionary
         elif isinstance(arg, dict):
             self.data_dict = arg
@@ -179,6 +185,9 @@ class BaseSearchDocument(object):
             #Save value
             if isinstance(field, search_fields.PrimaryKeyField):
                 self.pk_field = field
+                if self._instance and not hasattr(self._instance, "pk"):
+                    pk = getattr(self._instance,field.name)
+                    setattr(self._instance, "pk", pk)
                 break
     
         if not self.pk_field:
@@ -192,6 +201,11 @@ class BaseSearchDocument(object):
         elif self.data_dict:
             self.clean()
             self._transformed = True
+    
+        #Set Up the render Methods.
+        for key, template in self.templates:
+            setattr(self, "render_%s" % key,
+                    curry(self._render_doc_as, template=template))
     
     def __getitem__(self, name):
         "Convenience method for templates"
@@ -278,9 +292,6 @@ class BaseSearchDocument(object):
 
     def to_delete_xml(self):
         return u"<id>%s</id>" % self.pk_field.value
-
-    def render_html(self):
-        return render_to_string(self.template, {'document' : self})
     
     def is_indexable(self, instance):
         """
@@ -293,6 +304,9 @@ class BaseSearchDocument(object):
         Override this to specify a custom per-document boost.
         """
         return ''
+
+    def _render_doc_as(self, template):
+        return render_to_string(template, {'document' : self})
 
     @classmethod
     def set_index(cls, index):

@@ -186,9 +186,9 @@ class SearchWrapper(object):
         request_url = self.select_url + "?" + query.url
         response = self.issue_request(request_url)
         
-        try:
-            return results.SelectResults(response)
-        except (ValueError, results.SolrException), e:
-            logger.error("Failed to return a valid search result for %s" % request_url)
-            return results.EmptyResults(query.url)
+        #try:
+        return results.SelectResults(response)
+        #except (ValueError, results.SolrException), e:
+        #    logger.error("Failed to return a valid search result for %s" % request_url)
+        #    return results.EmptyResults(query.url)
             

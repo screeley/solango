@@ -1,7 +1,7 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
-from solango.solr import xmlutils
+
 from solango import conf
 import urllib
 import datetime
@@ -72,7 +72,7 @@ class Facet(object):
         Returns the best-fit immediate parent for the specified value, or
         None if value does not appear to have a parent.
         """
-        n = value.value.rfind(conf.FACET_SEPARATOR)
+        n = value.value.rfind(conf.SEARCH_SEPARATOR)
         
         if n == -1:
             return None
@@ -146,7 +146,7 @@ class Facet(object):
     def create_value(self, value, count):
         return FacetValue(value, count)
     
-    def __init__(self, node):
+    def __init__(self, name, values):
         """
         Iterate the provided DOM Node, parsing the facet name and any child
         value counts.  Facet values are additionally merged into a tree
@@ -158,12 +158,13 @@ class Facet(object):
         
         Takes a parsed xml document.
         """
-        (self.name, self.values) = (xmlutils.get_attribute(node, "name"), [])
+        self.name = name
+        self.values = []
         
-        for c in xmlutils.get_child_nodes(node, "int"):
-            
-            value = xmlutils.get_attribute(c, "name")
-            count = xmlutils.get_int(c)
+        values.reverse()
+        while(values):
+            value = values.pop()
+            count = values.pop()
             self.values.append(self.create_value(value, count))
         
         self.merge_values()

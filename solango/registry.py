@@ -13,29 +13,29 @@ class NotRegistered(Exception):
 
 class DocumentRegistry(UserDict):
     
-    def get_document(self, instance):
+    def get_document(self, instance, initial=False):
         
         key = get_instance_key(instance)
 
         if key not in self.data.keys():
-            raise NotRegistered('Instance not reqistered with Solango')
-    
-        return self.data[key](instance)
+            raise NotRegistered('Instance not registered with Solango')
+                
+        return self.data[key](instance, initial)
         
-    def register(self, model=None, search_document=None, document_index=None,
-                         connect_signals=True):
+    def register(self, search_document=None, model=None, document_index=None,
+                         connect_signals=True, document_key=None):
         """ Register Models With Solango """
     
         assert model is not None or search_document is not None, \
              "Register needs a Model or a Search Document"
     
-        document_key = None
-        if model:
-            document_key = get_instance_key(model)
-        elif search_document and search_document.key:
-            document_key = document_key
-        else:
-            raise AttributeError("Register need a model or search document key")
+        if document_key is None:
+            if model:
+                document_key = get_instance_key(model)
+            elif search_document and search_document.model_key:
+                document_key = search_document.model_key
+            else:
+                raise AttributeError("Register need a model or search document key")
         
         document = self.get(document_key)
         if document:
@@ -43,7 +43,7 @@ class DocumentRegistry(UserDict):
                                             % (model or search_document))
         
         #Set Defaults
-        if not search_document:
+        if not search_document and model:
             from solango.solr.documents import SearchDocument
             search_document = SearchDocument
         
