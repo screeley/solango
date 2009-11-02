@@ -4,11 +4,7 @@
 
 from django.conf import settings
 
-### Indexing implementation. See the supplied implementations in solango.indexing
-SOLR_INDEXER = getattr(settings, "SOLR_INDEXER", "solango.indexing.ImmediateIndexer")
-
 ### Search-specific settings.
-
 SEARCH_UPDATE_URL = getattr(settings, "SEARCH_UPDATE_URL", "http://localhost:8983/solr/update")
 SEARCH_SELECT_URLS = getattr(settings, "SEARCH_SELECT_URLS", "http://localhost:8983/solr/select")
 SEARCH_PING_URLS =  getattr(settings, "SEARCH_PING_URLS", ["http://localhost:8983/solr/admin/ping",])
@@ -43,7 +39,7 @@ SEARCH_FACET_PARAMS =  getattr(settings, "SEARCH_FACET_PARAMS", [
 ])
 
 ### strftime format strings for displaying faceting links.
-SEARCH_FACET_DATE_FORMATS = getattr(settings, "SEARCH_FACET_DATE_FORMATS", {
+SEARCH_FACET_DATE_FORMATS  = getattr(settings, "SEARCH_FACET_DATE_FORMATS", {
     'DAY': '%e %b %Y',
     'MONTH': '%B %Y',
     'YEAR': '%Y',
@@ -59,13 +55,6 @@ SEARCH_HL_PARAMS = getattr(settings, "SEARCH_HL_PARAMS" ,[
 SEARCH_SEPARATOR = getattr(settings, "SEARCH_SEPARATOR", "__")
 
 FACET_SEPARATOR = getattr(settings, "FACET_SEPARATOR", ";;")
-
-########## LOGGING ##############
-# The filename to which the logger will write.
-import os
-DIRNAME = os.path.abspath(os.path.dirname(__file__))
-LOGGING_CONF = getattr(settings, "LOGGING_CONF", os.path.join(DIRNAME,'conf/logging.conf'))
-
 
 ########## DEFERRED_BACKEND ##########
 DEFERRED_BACKEND = "base"

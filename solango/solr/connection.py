@@ -164,7 +164,7 @@ class SearchWrapper(object):
         
         return self.issue_request(self.update_url, content)
     
-    def select(self, *args, **kwargs):
+    def select(self, initial=None, **kwargs):
         """
         Submits the specified query to Solr's select interface (GET).
         
@@ -177,13 +177,13 @@ class SearchWrapper(object):
              'sort' : 'score desc'}
         """
         
-        if args and isinstance(args[0], Query):
-            query= args[0]
+        if initial and isinstance(initial, Query):
+            query= initial
         else:
-            query = Query(*args, **kwargs)
+            query = Query(initial, **kwargs)
 
         # Submits the response to solr
-        request_url = self.select_url + "?" + query.url
+        request_url = self.select_url + query.url()
         response = self.issue_request(request_url)
         
         #try:

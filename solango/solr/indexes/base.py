@@ -1,5 +1,6 @@
 from solango import conf
 from solango.solr.connection import SearchWrapper
+from solango.solr.query import Query
 
 class Index(object):
     """
@@ -30,6 +31,20 @@ class Index(object):
                                              self.ping_urls)
         return self._connection
     
+    def query(self, initial=None, **kwargs):
+        """
+        Creates a default query.
+        """
+        default_initial = conf.SEARCH_FACET_PARAMS
+        default_initial.extend(conf.SEARCH_HL_PARAMS)
+        default = Query(default_initial , sort=conf.SEARCH_SORT_PARAMS.keys())
+        
+        query = Query(initial, **kwargs)
+        
+        default.merge(query)
+        
+        return default
+            
     def ping(self):
         return self.connection.is_available()
 
@@ -42,14 +57,15 @@ class Index(object):
     def delete(self, doc):
         return self.connection.delete(doc.to_delete_xml())
     
-    def delete_all(self, doc):
+    def delete_all(self):
         return self.connection.delete_all()
     
-    def delete_by_query(self):
-        return self.connection.delete_by_query(doc)
+    def delete_by_query(self, query):
+        return self.connection.delete_by_query(query)
 
-    def select(self, *args, **kwargs):
-        return self.connection.select(*args, **kwargs)
+    def select(self, initial=None, **kwargs):
+        query = self.query(initial, **kwargs)
+        return self.connection.select(query)
     
     def post_save(self, **kwargs):
         pass

@@ -1,7 +1,7 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
-from solango import connection
+from solango import Index
 from solango import utils
 from math import ceil
 
@@ -37,12 +37,10 @@ class SearchPaginator(object):
         {% endif %}
     """
     
-    def __init__(self, params, request):
-        self.page = int(params.pop('page', 1))
-        self.per_page = int(params.pop('per_page', 5))
-        params['start'] = (self.page-1  ) * self.per_page
-        params['rows'] = self.per_page
-        self.results = connection.select(params)
+    def __init__(self, results, request=None, page=1, per_page=5):
+        self.page = int(page)
+        self.per_page = int(per_page)
+        self.results = results
         self.next_link = None
         self.previous_link = None
         self.first_link = None

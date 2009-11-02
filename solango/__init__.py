@@ -7,7 +7,6 @@ from solango.solr.documents import SearchDocument
 from solango.solr.indexes import Index
 from solango.registry import documents
 from solango.exceptions import *
-from solango.conf import SEARCH_SEPARATOR
 
 #### Taken from django.contrib.admin.__init__.py
 def autodiscover():
@@ -47,5 +46,5 @@ def autodiscover():
         # to bubble up.
         __import__("%s.search" % app)
 
-if not documents:
-    autodiscover()
+#if not documents:
+#    autodiscover()

@@ -25,14 +25,6 @@ class FacetValue(object):
             n += len(conf.SEARCH_SEPARATOR)
         self.name = self.value[n:].title()
         
-        
-        n = self.name.rfind(conf.FACET_SEPARATOR)
-        if n == -1:
-            n = 0
-        else:
-            n += len(conf.FACET_SEPARATOR)
-        self.name = self.name[n:].title()
-        
     def get_encoded_value(self):
         """
         Returns the url-encoded value for inclusion in a URL.
@@ -42,6 +34,13 @@ class FacetValue(object):
             clean = '"%s"' % clean
         return urllib.quote(clean)
     
+    
+    def as_dict(self):
+        return {"name": self.name,
+                "value" : self.value,
+                "count" : self.count,
+                "children" : [v.as_dict() for v in self.children]}
+        
 class Facet(object):
     """
     Facets are fields upon which Solr may group search results (analogous to a
@@ -65,7 +64,9 @@ class Facet(object):
         2007 - 5
         2008 - 11
     """
-    (name, values) = (None, None)
+    
+    name = None
+    values = None
     
     def get_parent(self, value):
         """
@@ -109,7 +110,8 @@ class Facet(object):
         display purposes.
         """
         
-        self.values.append(value)
+        if value.parent is None:
+            self.values.append(value)
         
         if value.parent:
             value.level = value.parent.level + 1
@@ -156,7 +158,6 @@ class Facet(object):
         
         Parses the facet counts into this Result's facets list.
         
-        Takes a parsed xml document.
         """
         self.name = name
         self.values = []

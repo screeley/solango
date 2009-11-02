@@ -315,11 +315,10 @@ class BaseSearchDocument(object):
 class SearchDocument(BaseSearchDocument):
     id      = search_fields.PrimaryKeyField()
     model   = search_fields.ModelField()
-    site_id = search_fields.SiteField()
     url     = search_fields.UrlField()
     text    = search_fields.SolrTextField(multi_valued=True)    
     
     class Media:
-        template = 'solango/default_document.html'
+        templates = (('html', 'solango/default_document.html'),)
         
     __metaclass__ = DeclarativeFieldsMetaclass
