@@ -149,7 +149,7 @@ class BaseSearchDocument(object):
         self.highlight = ""
         self.boost = ""
         self._transformed = False
-        print arg.__class__
+        
         #Model
         if isinstance(arg, Model):
             self._instance = arg
@@ -217,11 +217,11 @@ class BaseSearchDocument(object):
 
     def _transform_field(self, field):
         value = None
+        
         try:
             value = getattr(self, 'transform_%s' % field.name)(self._instance)
             field.value = value
         except AttributeError:
-            #no transform rely on the field
             field.transform(self._instance)
 
     def transform(self):
@@ -273,12 +273,13 @@ class BaseSearchDocument(object):
     
     def add(self):
         if self.is_indexable(self._instance):
-            self.index.add(self)
+            return self.index.add(self)
         else:
             return ''
     
     def to_add_xml(self):
         self.transform()
+        
         doc = u"".join([unicode(field) for field in self.fields.values()])
         
         if self.boost:

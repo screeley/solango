@@ -45,6 +45,9 @@ class Command(NoArgsCommand):
         index_queued = options.get('index_queued')
         
         from solango import conf
+        from solango import autodiscover
+        
+        autodiscover()
         
         #### SOLR
         SOLR_SCHEMA_PATH = getattr(conf, 'SOLR_SCHEMA_PATH', None)

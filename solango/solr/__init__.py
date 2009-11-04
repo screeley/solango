@@ -7,13 +7,9 @@ Will handle the base wrapper.
 
 """
 
-from UserDict import UserDict
-
 from django.db.models.loading import get_model
-
 from django.forms.forms import DeclarativeFieldsMetaclass, BaseForm
 from django.db.models.base import ModelBase
-
 from solango import conf
 
 #Helper Functions for getting and setting models

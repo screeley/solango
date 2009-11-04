@@ -48,7 +48,7 @@ class DocumentRegistry(UserDict):
             search_document = SearchDocument
         
         if not document_index:
-            from solango.solr.indexes import Index
+            from solango.solr.indexes.base import Index
             document_index = Index()
         
         search_document.set_index(document_index)

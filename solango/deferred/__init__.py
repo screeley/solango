@@ -1,8 +1,9 @@
 
 
-from solango.conf import DEFERRED_BACKEND
+from solango import conf
 
-HANDLERS = ("base", "cache", "database", "mongodb",)
+HANDLERS = ("dummy", 
+            "database")
 
 def get_handler(name):
     
@@ -14,4 +15,4 @@ def get_handler(name):
     
     return getattr(module, 'Deferred')()
 
-handler = get_cache(DEFERRED_BACKEND)
+defer = get_handler(conf.DEFERRED_BACKEND)

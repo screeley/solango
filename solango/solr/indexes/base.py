@@ -1,6 +1,9 @@
-from solango import conf
+
+from solango.deferred import defer
 from solango.solr.connection import SearchWrapper
 from solango.solr.query import Query
+
+from solango import conf
 
 class Index(object):
     """
@@ -67,8 +70,38 @@ class Index(object):
         query = self.query(initial, **kwargs)
         return self.connection.select(query)
     
+    
+    def reindex(self, model, doc, batch_size=50):
+        start = 0
+        stop = batch_size
+        xml = ""
+        
+        while(1):
+            qs = model._default_manager.all()[start:stop]
+            for i in qs:
+                xml += doc(i).to_add_xml()
+            
+            if not xml:
+                break
+            
+            results = self.connection.add(xml)
+            
+            for result in results:
+                if not result.success:
+                    self.defer("add", result.xml, error=result.error)
+
+            xml = ""
+            
+            start = stop + 1
+            stop = start + batch_size
+
     def post_save(self, **kwargs):
         pass
     
     def post_delete(self, **kwargs):
         pass
+    
+    def defer(self, method, xml, doc_pk=None, error=None):
+        defer.add(method, xml, doc_pk, error)
+        
+        

@@ -569,6 +569,7 @@ class Query(QueryBase):
     bq = QValue()
     bf = UniqueMultiValue()
     qt = Value()
+    df = Value()
     
     facet = Facet()
     hl = Highlight()

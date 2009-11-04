@@ -107,7 +107,9 @@ def create_schema_xml(raw=False):
     else:
         return render_to_string('solango/schema.xml', {'fields': doc, "copy_fields"  : copy_doc, 'default_operator': SOLR_DEFAULT_OPERATOR})
 
-def reindex(batch_size=None):
-    from solango.indexing import indexer
-    indexer.index_all(batch_size=batch_size)
-    
+
+def reindex(batch_size=50):
+    import solango
+    for model_key, document in solango.documents.items():
+        model = solango.solr.get_model_from_key(model_key)
+        document.index.reindex(model, document, batch_size=batch_size)

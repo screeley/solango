@@ -57,4 +57,4 @@ SEARCH_SEPARATOR = getattr(settings, "SEARCH_SEPARATOR", "__")
 FACET_SEPARATOR = getattr(settings, "FACET_SEPARATOR", ";;")
 
 ########## DEFERRED_BACKEND ##########
-DEFERRED_BACKEND = "base"
+DEFERRED_BACKEND = "database"

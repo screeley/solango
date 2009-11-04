@@ -30,17 +30,18 @@ class Results(object):
     _json = {}
     header = None
     rows = 10
-    start = 0 
+    start = 0
+    url = None
+    error = None
+    error_code = None
+    method = None
     
-    def __init__(self, json):
+    def __init__(self, url, json):
         """
         Parses the provided XML body and initialize the header dictionary.
         """
-        if not json:
-            raise ValueError, "Invalid or missing JSON"
-        
+        self.url = url
         self._json = simplejson.loads(json)
-        
         self.header = self._json["responseHeader"]
     
     @property
@@ -63,10 +64,49 @@ class Results(object):
         Returns the server request time, in millis, for this Results instance.
         """
         return self.header["QTime"]
-    
+
+
+
+class ErrorResults(Results):
+    """
+    If the search results ends up in a massive error, we return this
+    as a replacement. Avoids the UGLY "Invalid or missing XML" Error
+    """
+   
+    def __init__(self, method, url, xml, error, code=None):
+        self.method = method
+        self.url = url
+        self.xml = xml
+        self.error = error
+        self.error_code = code
+ 
     @property
-    def url(self):
-        return urllib.urlencode(self.header['params'])
+    def status(self):
+        return 1
+
+    @property
+    def time(self):
+        return None
+
+
+class SelectErrorResults(ErrorResults):
+    """
+    If the search results ends up in a massive error, we return this
+    as a replacement. Avoids the UGLY "Invalid or missing XML" Error
+    """
+    count = None
+    date_gap = None
+    
+    def __init__(self, url, error, code=None):
+        self.method = "select"
+        self.url = url
+        self.documents = []
+        self.facets = []
+        self.facet_dates = []
+        self.highlighting ={}
+        self.count = 0
+        self.header ={}
+        
 
 class UpdateResults(Results):
     """
@@ -85,9 +125,9 @@ class UpdateResults(Results):
         
         header = xmlutils.get_child_node(doc.firstChild, "lst", "responseHeader")
         
-        doc.unlink()
-        
         self.header = xmlutils.get_dictionary(header)
+        
+        doc.unlink()
     
 class SelectResults(Results):
     """
@@ -97,12 +137,12 @@ class SelectResults(Results):
     count = None
     date_gap = None
     
-    def __init__(self, json):
+    def __init__(self, url, json):
         """
         Parses the provided XML body, including documents, facets, and
         highlighting information.  See Results.__init__(self, xml).
         """
-        Results.__init__(self, json)
+        Results.__init__(self, url, json)
         
         self.documents = []
         self.facets = [] 
@@ -185,29 +225,3 @@ class SelectResults(Results):
                 d.highlight += ' ' + ' '.join(value)
                 d.fields[key].highlight = ' '.join(value)
 
-
-class EmptyResults(SelectResults):
-    """
-    If the search results ends up in a massive error, we return this
-    as a replacement. Avoids the UGLY "Invalid or missing XML" Error
-    """
-    def __init__(self, url):
-        self._url = url
-        self.documents = []
-        self.facets = []
-        self.facet_dates = []
-        self.highlighting ={}
-        self.count = 0
-        self.header ={}
-        
-    @property
-    def status(self):
-        return 1
-
-    @property
-    def time(self):
-        return None
-    
-    @property
-    def url(self):
-        return self._url

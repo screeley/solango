@@ -4,32 +4,19 @@ Deferred Base
 Handle deferred objects.
 
 
-from solango.deferred import handler
+from solango.deferred import defer
 
-handler.defer_add(xml)
-
-handler.defer_delete(xml)
-
-handler.deferred_add()
-
-handler.deferred_delete()
-
-handler.commit()
+defer.add(method, xml, doc_pk, error)
 
 """
-class Deferred(object):
 
-    def defer_add(self, xml):
-        pass
+class BaseDeferred(object):
 
-    def defer_delete(self, xml):
-        pass
+    def create_object(self, instance):
+        raise NotImplementedError
 
-    def deferred_add(self):
-        return []
-    
-    def deferred_delete(self):
-        return []
+    def add(self, method, xml, doc_pk=None, error=None):
+        raise NotImplementedError
 
-    def commit(self):
-        pass
+    def list(self):
+        raise NotImplementedError

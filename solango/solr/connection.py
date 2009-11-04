@@ -9,17 +9,18 @@ from solango import conf
 from solango.log import logger
 from solango.solr import results
 from solango.solr.query import Query
+from solango.exceptions import SolrUnavailable, SolrException
 
 (DELETE, ADD) = (0,1)
 
 class SearchWrapper(object):
     """
     This class is the entry point for all search-bound actions, including
-    adding (indexing), deleting, and selecting (searching).  It is a singleton,
-    and should always be accessed via get_instance.
+    adding (indexing), deleting, and selecting (searching).
     """
-    (available, heartbeat) = (False, None)
-    (update_url, select_url, ping_urls) = (None, None, None)
+    
+    available = False
+    hearbeat = None
     
     def __init__(self, update_url, select_url, ping_urls):
         """
@@ -28,7 +29,6 @@ class SearchWrapper(object):
         self.update_url = update_url
         self.select_url = select_url
         self.ping_urls = ping_urls
-  
         self.heartbeat = datetime(1970, 01, 01)
     
     def is_available(self):
@@ -50,43 +50,77 @@ class SearchWrapper(object):
             
         return self.available
     
-    def get_document_xml(self, documents, mode):
-        """
-        Returns Solr Document XML representation of the specified objects, 
-        transformed according to mode, as a Unicode (utf-8) string".
-        """
-        if not documents:
-            raise ValueError
-        
-        if not isinstance(documents, (list, tuple)):
-            documents = [documents]
-        
-        xml = unicode("", "utf-8")
-        for d in documents:
-            if mode:
-                xml += d.add()
-            else:
-                xml += d.delete()
-        return xml
     
-    def add(self, xml):
+    
+    def _update_request(self, method, xml):
+        """
+        Issues update requests
+        """
+        
+        if not xml:
+            raise SolrException("No XML to Add")
+        
+        if not self.is_available():
+            return results.ErrorResults(method, self.update_url, xml, "Solr Unavailable")
+        
+        xml = xml.encode("utf-8", "replace")
+        
+        request = urllib2.Request(self.update_url, xml)
+        request.add_header("Content-type", "text/xml; charset=utf-8")
+        
+        response = None
+        try:
+            response = urllib2.urlopen(request)
+        except urllib2.HTTPError, e:
+            return results.ErrorResults(method, self.update_url, xml, str(e), e.code)
+        except urllib2.URLError, e: 
+            return results.ErrorResults(method, self.update_url, xml, str(e))
+        
+        return results.UpdateResults(response.read())
+    
+    def _select_request(self, url):
+        """
+        Issues update requests
+        """
+        
+        if not self.is_available():
+            raise SolrUnavailable("Unable to add documents to Solr")
+        
+        request = urllib2.Request(url)
+        request.add_header("Content-type", "application/json; charset=utf-8")
+
+        response = None
+        try:
+            response = urllib2.urlopen(request)
+        except urllib2.HTTPError, e:
+            return results.SelectErrorResults(url, str(e), e.code)
+        except  urllib2.URLError, e:
+            return results.SelectErrorResults(url, str(e))
+        
+        return results.SelectResults(url, response.read())
+
+       
+    def add(self, xml, commit=True):
         """
         Adds the specified list of objects to the search index.  Returns a
         two-element List of UpdateResults; the first element corresponds to
         the add operation, the second to the subsequent commit operation.
         """
-        if not xml:
-            raise ValueError("No XML to Add")
-
-        if not self.is_available():
-            logger.info("add: Search is unavailable.")
-            return
         
-        res = self.update("\n<add>\n" + xml + "</add>\n")
-        return [results.UpdateResults(res), self.commit()]
+        if xml:
+            xml = "\n<add>\n" + xml + "</add>\n"
+        
+        results=[]
+        
+        results.append(self._update_request("add", xml))
+        
+        if commit:
+            results.append(self.commit())
+        
+        return results
     
     def delete_all(self, commit=True):
-        self.delete_by_query(q='*:*', commit=commit)
+        return self.delete_by_query(q='*:*', commit=commit)
 
     def delete_by_query(self, q, commit=True):
 
@@ -99,82 +133,49 @@ class SearchWrapper(object):
             ret = [results.UpdateResults(res),]
         return ret
 
-    def delete(self, documents):
+    def delete(self, xml, commit=True):
         """
         Deletes the specified list of objects from the search index.  Returns
         a two-element List of UpdateResults; the first element corresponds to
         the delete operation, the second to the subsequent commit operation.
         """
-        if not documents:
-            raise ValueError
- 
-        xml = self.get_document_xml(documents, DELETE)
         
-        if not len(xml):
-            return
+        if xml:
+            xml = "\n<delete>\n" + xml + "</delete>\n"
+                
+        results=[]
         
-        if not self.is_available():
-            logger.info("delete: Search is unavailable.")
-            return
+        results.append(self._update_request("delete", xml))
         
-        res = self.update("\n<delete>\n" + xml + "</delete>\n")
-        return [results.UpdateResults(res), self.commit()]
+        if commit:
+            results.append(self.commit())
+        
+        return results
     
     def commit(self):
         """
         Commits any pending changes to the search index.  Returns an
         UpdateResults instance.
         """
-        res = self.update(unicode("\n<commit/>\n", "utf-8"))
-        return results.UpdateResults(res)
+        return self._update_request("commit", 
+                                    unicode("\n<commit/>\n", "utf-8"))
     
     def optimize(self):
         """
         Optimizes the search index.  Returns an UpdateResults instance.
         """
-        res = self.update(unicode("\n<optimize/>\n", "utf-8"))
-        return results.UpdateResults(res)
-            
-    def issue_request(self, url, content=None):
-        """
-        Submits the specified Unicode content to the specified URL.  Returns
-        the raw response content as a string, or None if an error occurs.
-        """
-        if content: 
-            data = content.encode("utf-8", "replace")
-        else:
-            data = None
-        
-        (req, res) = (urllib2.Request(url, data), None)
-        
-        req.add_header("Content-type", "application/json; charset=utf-8")
-        print url
-        try:
-            res = urllib2.urlopen(req).read()
-        except StandardError, e:
-            logger.error(e)
-        return res
+        return self._update_request("optimize", 
+                                    unicode("\n<optimize/>\n", "utf-8"))
     
-    def update(self, content):
+    def update(self, xml):
         """
         Submits the specified Unicode content to Solr's update interface (POST).
         """
-        if not content:
-            raise ValueError
-        
-        return self.issue_request(self.update_url, content)
+        return self._update_request("update", xml)
     
     def select(self, initial=None, **kwargs):
         """
         Submits the specified query to Solr's select interface (GET).
-        
-        if there are args it's a request.GET, kwargs are from the manager
-        which looks like this:
-            {'category' : 'news__national'
-             'type' : None 
-             'author' : None
-             'year' : '2008'
-             'sort' : 'score desc'}
         """
         
         if initial and isinstance(initial, Query):
@@ -182,13 +183,5 @@ class SearchWrapper(object):
         else:
             query = Query(initial, **kwargs)
 
-        # Submits the response to solr
         request_url = self.select_url + query.url()
-        response = self.issue_request(request_url)
-        
-        #try:
-        return results.SelectResults(response)
-        #except (ValueError, results.SolrException), e:
-        #    logger.error("Failed to return a valid search result for %s" % request_url)
-        #    return results.EmptyResults(query.url)
-            
+        return self._select_request(request_url)

@@ -3,7 +3,7 @@
 #
 
 import re
-from  datetime import datetime
+from  datetime import datetime, date
 from time import strptime
 from django.utils.encoding import smart_unicode
 
@@ -13,92 +13,122 @@ from solango.solr import get_instance_key
 from solango.solr import utils
 
 
-__all__ = ["Field", "DateField", "DateTimeField", "CharField", "TextField", "IntegerField",
-            "BooleanField", "UrlField", "SiteField", "ModelField", 
-            "FloatField", "DoubleField", "LongField"]
+__all__ = ["Field", "DateField", "DateTimeField", "CharField", "TextField", 
+           "IntegerField", "BooleanField", "UrlField", "SiteField", 
+           "ModelField", "FloatField", "DoubleField", "LongField"]
 
 class Field(object):
     """
+    Field
+    -----
     An abstraction for a Search Document field.
     
-    name    -- Name  of field 
-    value   -- Value of field
+    ..attribute: name
+        
+        Name of field
     
-    copy -- Boolean, if true the value will be copied into the field(s) specied
-    in 'dest'
+    ..attribute: value
+    
+        Value of field
+        
+    ..attribute: copy
+    
+        Boolean, if true the value will be copied into the field(s) specified
+        in 'dest'. Default value is False
 
-    dest -- String, Tuple or List: solr field(s) name where field value should
-    be copied. Defaults to "text".
+    ..attribute: dest
+    
+        String, Tuple or List: solr field(s) name where field value should be
+        copied. Default value is "text".
 
-    dynamic -- Boolean, if field is created on the fly lets us tell solr where it 
-        needs to end up. by default dynamic fields are copyied into the text field
+    ..attribute: dynamic
     
-    indexed -- If (and only if) a field is indexed, then it is searchable, sortable, 
-        and facetable.
+        Boolean, if field is created on the fly this lets us tell solr where it 
+        needs to end up. By default dynamic fields are copied into the text 
+        field. Default value is `False`
     
-    stored=true|false
-        True if the value of the field should be retrievable during a search
+    ..attribute: indexed 
     
-    boost -- Index the field with a custom boost.
+        Boolean, If (and only if) a field is indexed, then it is searchable, 
+        sortable, and facetable. Default value is `True`
+    
+    ..attribute: stored
+    
+        Boolean, `True` if the value of the field should be retrievable during
+        a search. Default value is `True`
+    
+    ..attribute: boost
+    
+        Float, Index the field with a custom boost. Default value is `None`.
     
     """
     # Tracks each time a Field instance is created. Used to retain order.
     creation_counter = 0
     
-    def __init__(self, name='', value=None, required=False, copy=False, dest="text", dynamic=False, indexed=True, stored=True,
-                multi_valued=False, omit_norms=False, boost=None, extra_attrs={}):
-        self.name = smart_unicode(name)
+    def __init__(self, name='', value=None, required=False, copy=False, 
+                dest="text", dynamic=False, indexed=True, stored=True, 
+                multi_valued=False, omit_norms=False, boost=None, 
+                extra_attrs={}):
         
-        self.value,  self.copy, self.dynamic, self.indexed = value, copy, dynamic, indexed
-        self.multi_valued, self.stored, self.extra_attrs = multi_valued, stored, extra_attrs
+        self.name = smart_unicode(name)
+        self.value = value
+        self.copy = copy
+        self.dynamic = dynamic
+        self.indexed = indexed
+        self.multi_valued = multi_valued
+        self.stored = stored
+        self.extra_attrs = extra_attrs
 
         if isinstance(dest, basestring):
             dest = [dest]
 
-        self.omit_norms, self.dest, self.required = omit_norms, dest, required
+        self.omit_norms = omit_norms
+        self.dest = dest
+        self.required = required
         self.boost = boost
         
         # Increase the creation counter, and save our local copy.
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
         
-        # highlighting
-        # Used on display, if a doc value has highlighted field it can be displayed by calling
-        # self.highlight
+        # Highlighting used on display, if a doc value has highlighted field it
+        # can be displayed by calling self.highlight
         self.highlight = None
-        
-        # Clean the field value of tags and other nasty things.  Unfortunately,
-        # we can't use sax or dom to do this elegantly, because often the 
-        # fields which look like XML are not well-formed.
-        if value:
-            value = str(value.replace("<![CDATA[", "").replace("]]>", ""))
-            self.value = unicode(re.sub(r"<[^>]*?>", "", value), "utf-8")
-        
+                
     def __unicode__(self):
-        result = []
-        values = self.value
+        
+        if not self.multi_valued:
+            return self._create_field_xml()
 
-        if not self.multi_valued \
-            or self.multi_valued and not isinstance(values, (list, tuple)):
+        values = self.value
+        if not isinstance(values, (list, tuple)):
             values = [values]
 
+        results = []
         for value in values:
-            value = utils._from_python(value)
-            if value is not None:
-                if self.boost:
-                    boost_attr = ' boost="%s"' % self.boost
-                else:
-                    boost_attr = ''
-                    
-                xml = '<field name="%s"%s><![CDATA[%s]]></field>\n'
-                result.append(xml % (self.get_name(), boost_attr, value))
+            if value is None:
+                results.append('')
             else:
-                result.append('')
+                results.append(self._create_field_xml(value))
 
-        if self.multi_valued:
-            return '\n'.join(result)
+        return '\n'.join(results)
 
-        return result[0]
+    def _create_field_xml(self, value=None):
+        if value is None:
+            value = self.value
+        
+        if value is None or value == '':
+            return ''
+        
+        boost_attr = ''
+        if self.boost:
+            boost_attr = ' boost="%s"' % self.boost
+        
+        value = self.from_python(value)
+        
+        xml = '<field name="%s"%s>%s</field>\n' % (self.get_name(), 
+                                                   boost_attr, value)
+        return xml
 
     def dynamic_name(self):
         return "%s_%s" % (self.name, self.dynamic_suffix)
@@ -146,6 +176,9 @@ class Field(object):
         
         return self.value[:limit]
     
+    def from_python(self, value):
+        return unicode(value)
+    
 class DateField(Field):
     dynamic_suffix = "dt"
     type = "date"
@@ -156,6 +189,11 @@ class DateField(Field):
         elif isinstance(self.value, unicode):
             self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
     
+    def from_python(self, value):
+        if isinstance(value, date):
+            return value.strftime('%Y-%m-%dT00:00:00.000Z')
+        return ""
+        
 class DateTimeField(Field):
     dynamic_suffix = "dt"
     type = "date"
@@ -163,6 +201,11 @@ class DateTimeField(Field):
     def clean(self):
         if isinstance(self.value, unicode):
             self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6])
+
+    def from_python(self, value):
+        if isinstance(value, datetime):
+            return value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        return ""
 
 class CharField(Field):
     dynamic_suffix = "s"
@@ -185,10 +228,10 @@ class IntegerField(Field):
     
     def clean(self):
         if isinstance(self.value, list):
-            self.value = [int(i) for i in self.value]
-        elif not isinstance(self.value, int):
+            self.value = [int(i) for i in self.value]        
+        elif self.value is not None and not isinstance(self.value, int):
             self.value = int(self.value)
-
+        
 class BooleanField(Field):
     dynamic_suffix = "b"
     type = "boolean"
@@ -199,7 +242,15 @@ class BooleanField(Field):
                 self.value = True
             elif self.value == 'false':
                 self.value = False
-            
+    
+    def from_python(self, value):
+        if value is True:
+            return "true"
+        elif value is False: 
+            return "false"
+        else:
+            return ""
+    
 class UrlField(CharField):
     
     def __init__(self, *args, **kwargs):
