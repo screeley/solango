@@ -4,6 +4,7 @@ Deferred Database
 Handle deferred objects.
 
 """
+from django.db import DatabaseError
 
 from solango.solr.utils import idict
 from solango.deferred.base import BaseDeferred
@@ -27,10 +28,16 @@ class Deferred(object):
         if method_int is None:
             raise ValueError("unknown method: %s" % method)
         
-        df = DeferredObject.objects.create(method=method_int, xml=xml, 
+        try:
+            df = DeferredObject.objects.create(method=method_int, xml=xml, 
                                       doc_pk=doc_pk, error=error)
+            return self.create_object(df)
+        except DatabaseError, e:
+            #TODO. We don't want this to kill other things.
+            print str(e)
+        
+        return idict()
 
-        return self.create_object(df)
 
     def list(self):
         return DeferredObject.objects.all()

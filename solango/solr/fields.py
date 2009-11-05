@@ -211,9 +211,15 @@ class CharField(Field):
     dynamic_suffix = "s"
     type = "string"
     
+    def from_python(self, value):
+        return u'<![CDATA[%s]]>' % self.value
+    
 class TextField(Field):
     dynamic_suffix = "t"
     type="text"
+    
+    def from_python(self, value):
+        return u'<![CDATA[%s]]>' % self.value
     
 class SolrTextField(Field):
     dynamic_suffix = "t"
