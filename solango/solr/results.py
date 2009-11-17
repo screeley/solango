@@ -185,17 +185,27 @@ class SelectResults(Results):
             return None
         
         fields = facets.get("facet_fields", None)
-        
-        if not fields:
-            return None
-                    
-        #exceptions = xmlutils.get_child_node(facets, 'str')
-        
-        #if exceptions:
-        #    raise SolrException('There was a java exception:  %s' % exceptions.lastChild.wholeText)
 
-        for name, values in fields.items():
-            self.facets.append(Facet(name, values))
+        if fields is not None:
+            for name, values in fields.items():
+                merge = True
+                if name in ["model", "id"]:
+                    merge = False
+                self.facets.append(Facet(name, values, merge))
+        
+        query_facets = facets.get("facet_queries", None)
+        
+        if query_facets is not None:
+            query_dict = {}
+            for key, count in query_facets.items():
+                name, value = key.split(":", 1)
+                if query_dict.has_key(name):
+                    query_dict[name].extend([value, count])
+                else:
+                    query_dict[name] = [value, count]
+            
+            for name, values in query_dict.items():
+                self.facets.append(Facet(name, values, False))
         
         params = self.header.get('params', None)
         if params is not None:
@@ -214,14 +224,11 @@ class SelectResults(Results):
         elements to their owning documents.
         """
         self.highlighting = self._json.get("highlighting", None)
-        
+
         if not self.highlighting:
             return None
 
         for d in self.documents:
-            #TODO: Ugly
-            model_key = conf.SEARCH_SEPARATOR.join([d.fields['model'].value, d.pk_field.value])
-            for key, value in self.highlighting[model_key].items():
-                d.highlight += ' ' + ' '.join(value)
+            for key, value in self.highlighting[d.pk_field._id].items():
+                d.highlight += ' %s' % ' '.join(value)
                 d.fields[key].highlight = ' '.join(value)
-

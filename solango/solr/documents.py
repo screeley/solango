@@ -252,9 +252,9 @@ class BaseSearchDocument(object):
                 field.value = self.data_dict[field.get_name()]
                 try:
                     value = None
-                    value = getattr(self, 'clean_%s' % name, None)()
+                    value = getattr(self, 'clean_%s' % name, None)(field.value)
                     field.value = value
-                except Exception, e:
+                except TypeError:
                     #no transform rely on the field
                     field.clean()
             else:

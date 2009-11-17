@@ -1,16 +1,19 @@
 #
 # Copyright 2008 Optaros, Inc.
 #
+from copy import deepcopy
+
 from django.template import RequestContext, loader
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseServerError, HttpResponse
 from django.core.urlresolvers import reverse
 from django.views.generic.create_update import apply_extra_context
+from django.shortcuts import render_to_response
 
-from solango import connection
+import solango
 from solango import utils
 from solango.paginator import SearchPaginator
 from solango.forms import SearchForm
-
+from solango.deferred import defer
 
 class SearchView(object):
     """
@@ -25,26 +28,37 @@ class SearchView(object):
     Based on the upcoming django views. by jkocherhans
         http://code.djangoproject.com/attachment/ticket/6735/new-generic-views.3.diff
     """
-    def __init__(self, form_class=None, template_name=None, error_redirect=None):
-        self.form_class = form_class
-        self.template_name = template_name
-        if not error_redirect:
-            error_redirect = 'solango_search_error'
-        self.error_redirect = error_redirect
+    _index = None
     
-    def __call__(self, request, form_class=None, template_name=None, extra_context={}):
-        return self.main(request, form_class, template_name, extra_context={})
+    def __init__(self, form_class=None, template=None):
+        self.form_class = form_class
+        self.template = template
+        self.results = None
+    
+    @property
+    def index(self):
+        """Lazy get Index"""
+        if self._index is None:
+            self._index = solango.Index()
+        return self._index
+    
+    def __call__(self, request, form_class=None, template=None, extra_context={}):
+        return self.main(request, form_class, template, extra_context={})
 
-    def main(self, request, form_class=None, template_name=None, extra_context={}):
+
+    def select(self, params):
+        self.results = self.index.select(params)
+        print self.results.url
+        return self.results
+
+    def main(self, request, form_class=None, template=None, extra_context={}):
         """
         Main Function of view
         """
-        if not self.is_available():
-            return HttpResponseRedirect(reverse(self.error_redirect))
-        
+                
         form_class = self.get_form(form_class)
         
-        params = {}
+        params = []
         facets = []
         sort_links = []
         facet_dates = []
@@ -54,10 +68,22 @@ class SearchView(object):
             form = form_class(request.GET)
             if form.is_valid():
                 # Get all the get params
-                params.update(dict(request.GET.items()))
-                # Overwrite those with anything you might of changed in the form.
+                
+                params = deepcopy(request.GET)
+                
+                page = int(params.pop("page", [1])[0])
+                per_page = int(params.pop("per_page", [25])[0])
+                
                 params.update(form.cleaned_data)
-                paginator = SearchPaginator(params, request)
+                
+                query = self.index.query(params.items())
+                query.start = (page-1)*per_page
+                query.rows = per_page
+
+                results = self.select(query)
+                
+                paginator = SearchPaginator(results, request, page, per_page)
+                
                 facets = utils.get_facets_links(request, paginator.results)
                 sort_links = utils.get_sort_links(request)
         else:
@@ -66,7 +92,7 @@ class SearchView(object):
         # Get Context
         context = self.get_context(request, paginator, facets, sort_links, form)
         apply_extra_context(extra_context, context)
-        template = self.get_template(request, template_name)
+        template = self.get_template(request, template)
         
         #Render Template
         rendered_template = template.render(context)
@@ -77,7 +103,7 @@ class SearchView(object):
         If you don't want Solango to check for a connection first, 
         set this to true.
         """
-        return connection.is_available()
+        return Index().is_available()
     
     
     def get_form(self, form_class):
@@ -90,15 +116,15 @@ class SearchView(object):
             form_class = SearchForm
         return form_class
     
-    def get_template(self, request, template_name): 
+    def get_template(self, request, template): 
         """ 
         Returns the loaded Template
         """
-        if not template_name:
-            template_name = self.template_name
-        if not template_name:
-            template_name = 'solango/search.html'
-        return loader.get_template(template_name) 
+        if not template:
+            template = self.template
+        if not template:
+            template = 'solango/search.html'
+        return loader.get_template(template) 
     
     
     def get_context(self, request, paginator, facets, sort_links, form): 
@@ -112,3 +138,10 @@ class SearchView(object):
     
 # View.
 select = SearchView()
+
+
+def deferred(request):
+    
+    return render_to_response("solango/deferred.html", 
+                              {"objects" : defer.list()}, 
+                                RequestContext(request))

@@ -67,7 +67,10 @@ class Index(object):
         return self.connection.delete_by_query(query)
 
     def select(self, initial=None, **kwargs):
-        query = self.query(initial, **kwargs)
+        if isinstance(initial, Query):
+            query= initial
+        else:
+            query = self.query(initial, **kwargs)
         return self.connection.select(query)
     
     

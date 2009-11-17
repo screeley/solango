@@ -6,5 +6,6 @@ from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',               
     url(r'^$', 'solango.views.select', {}, 'solango_search'),
-    url(r'^search-error/$', direct_to_template, {'template': 'solango/error.html'}, 'solango_search_error'),    
+    url(r'^search-error/$', direct_to_template, {'template': 'solango/error.html'}, 'solango_search_error'),
+    url(r'^deferred/$', "solango.views.deferred", {}, 'solango_deferred'),
 )

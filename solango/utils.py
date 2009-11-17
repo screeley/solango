@@ -47,7 +47,6 @@ def get_facets_links(request, results):
     facets = {}
     for facet in results.facets:
         base = get_base_url(request, ["page", facet.name])
-        base_sep = "?" in base and "&" or "?"
         current_val = request.REQUEST.get(facet.name, None)
         current_val_quoted = current_val and urllib.quote(current_val) or None
         
@@ -55,20 +54,12 @@ def get_facets_links(request, results):
             'name'    : facet.name,
             'base'    : base,
             'links'   : [],
-            'current' : current_val
+            'current' : current_val is None
         }
         
-        previous_level = 0
         for value in facet.values:
-            indent = False
-            undent = False
             clean = value.get_encoded_value()
-            if clean != '':
-                if previous_level > value.level:
-                    undent = True
-                elif previous_level < value.level:
-                    indent = True
-                
+            if clean != '':                
                 facets[facet.name]['links'].append({
                     'anchor' : value.name,
                     'count'  : value.count,
@@ -76,7 +67,6 @@ def get_facets_links(request, results):
                     'href'   : "%s&%s=%s" % (base, facet.name, clean),
                     'active' : (current_val_quoted == clean)
                 })
-                previous_level = value.level
     return facets
 
 def create_schema_xml(raw=False):

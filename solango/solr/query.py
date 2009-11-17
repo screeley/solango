@@ -20,6 +20,7 @@ We need to handle 3 use cases:
 import urllib
 from copy import deepcopy
 
+
 class Value(object):
 
     def __init__(self, data=None, prefix=None, default=None, help_text=None):
@@ -158,6 +159,8 @@ class UniqueSingleValue(UniqueMultiValue):pass
 
 class QValue(MultiValue):
     
+    operator = "AND"
+    
     def add(self, key, value=None):
         if value is not None:
             key = "%s:%s" % (key, value)
@@ -174,9 +177,11 @@ class QValue(MultiValue):
         name = self.name.replace("_", ".")
         if self.prefix:
             name = self.prefix + name
-        
-        return urllib.urlencode([(name, " AND ".join(["%s" % value
+        print self.operator
+        operator = " %s " % self.operator
+        return urllib.urlencode([(name, operator.join(["%s" % value
                           for value in self.data]))])
+
 
 
 def get_query_values(attrs):
@@ -250,7 +255,7 @@ class Facet(QueryBase):
     -----
     Python Object that represents a Solr Facet query.
     """
-    query = QValue(prefix="facet.",
+    query = UniqueMultiValue(prefix="facet.",
                    default="*:*", 
                    help_text="This param allows you to specify an arbitrary"
                    +"query in the Lucene default syntax to generate a facet"
@@ -549,9 +554,10 @@ class Query(QueryBase):
                help_text="This is the only mandatory query parameter. Search"
                + " string used by solr")
     sort = UniqueMultiValue()
-    start = UniqueMultiValue()
+    start =  Value()
+    rows = Value()
     fq = UniqueMultiValue()
-    fl = UniqueSingleValue()
+    fl = DelimitedMultiValue()
     debugQuery = Value()
     explainOther = Value()
     defType = Value()
@@ -623,8 +629,11 @@ class Query(QueryBase):
             self.facet.add(key, value)
         elif key.startswith("hl"):
             self.hl.add(key, value)
-        else:    
-            self.data[key].add(value)
+        else:
+            if self.data.has_key(key):
+                self.data[key].add(value)
+            else:
+                self.data["q"].add(key, value)
     
     def url(self):
         return "?%s" % "&".join([value.url() for value in self.data.values() if value])

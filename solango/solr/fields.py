@@ -187,11 +187,15 @@ class DateField(Field):
         if isinstance(self.value, datetime):
             self.value = self.value.date()
         elif isinstance(self.value, unicode):
-            self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
+            self.value = datetime(*strptime(self.value, 
+                                            "%Y-%m-%dT%H:%M:%SZ")[0:6]).date()
     
     def from_python(self, value):
         if isinstance(value, date):
-            return value.strftime('%Y-%m-%dT00:00:00.000Z')
+            #datetime.strftime doesn't handle dates before 1900
+            return '%d-%02d-%02dT00:00:00Z' % (value.year,
+                                                value.month, 
+                                                value.day)
         return ""
         
 class DateTimeField(Field):
@@ -200,11 +204,18 @@ class DateTimeField(Field):
 
     def clean(self):
         if isinstance(self.value, unicode):
-            self.value = datetime(*strptime(self.value, "%Y-%m-%dT%H:%M:%SZ")[0:6])
+            self.value = datetime(*strptime(self.value, 
+                                            "%Y-%m-%dT%H:%M:%SZ")[0:6])
 
     def from_python(self, value):
         if isinstance(value, datetime):
-            return value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            #datetime.strftime doesn't handle dates before 1900
+            return '%d-%02d-%02dT%02d:%02d:%02dZ' % (value.year,
+                                                     value.month,
+                                                     value.day,
+                                                     value.hour,
+                                                     value.minute,
+                                                     value.second)
         return ""
 
 class CharField(Field):
@@ -212,14 +223,14 @@ class CharField(Field):
     type = "string"
     
     def from_python(self, value):
-        return u'<![CDATA[%s]]>' % self.value
+        return u'<![CDATA[%s]]>' % value
     
 class TextField(Field):
     dynamic_suffix = "t"
     type="text"
     
     def from_python(self, value):
-        return u'<![CDATA[%s]]>' % self.value
+        return u'<![CDATA[%s]]>' % value
     
 class SolrTextField(Field):
     dynamic_suffix = "t"
@@ -274,6 +285,8 @@ class UrlField(CharField):
 
 class PrimaryKeyField(CharField):
     
+    _id = None
+    
     def __init__(self, *args, **kwargs):
         kwargs.update({'required' : True})
         super(PrimaryKeyField, self).__init__(*args, **kwargs)
@@ -292,6 +305,11 @@ class PrimaryKeyField(CharField):
         return unicode(self)
     
     def clean(self):
+        """
+        We save a reference to the solr doc id sneakily so we can use it 
+        latter
+        """
+        self._id = self.value
         self.value = self.value.split(conf.SEARCH_SEPARATOR)[-1]
 
 class SiteField(IntegerField):
@@ -304,6 +322,8 @@ class SiteField(IntegerField):
         return unicode(self)
 
 class ModelField(CharField):
+    
+    _id = None
    
     def __init__(self, *args, **kwargs):
         kwargs.update({'required' : True})
@@ -312,6 +332,10 @@ class ModelField(CharField):
     def transform(self, instance):
         self.value = get_instance_key(instance)
         return unicode(self)
+    
+    def clean(self):
+        self._id = self.value
+        self.value = self.value.split(conf.SEARCH_SEPARATOR)[-1]
 
 class FloatField(Field):
     dynamic_suffix = "f"

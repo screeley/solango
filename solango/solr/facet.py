@@ -73,6 +73,7 @@ class Facet(object):
         Returns the best-fit immediate parent for the specified value, or
         None if value does not appear to have a parent.
         """
+    
         n = value.value.rfind(conf.SEARCH_SEPARATOR)
         
         if n == -1:
@@ -148,7 +149,7 @@ class Facet(object):
     def create_value(self, value, count):
         return FacetValue(value, count)
     
-    def __init__(self, name, values):
+    def __init__(self, name, values, merge=True):
         """
         Iterate the provided DOM Node, parsing the facet name and any child
         value counts.  Facet values are additionally merged into a tree
@@ -166,9 +167,14 @@ class Facet(object):
         while(values):
             value = values.pop()
             count = values.pop()
-            self.values.append(self.create_value(value, count))
+            if value is not None and count is not None:
+                self.values.append(self.create_value(value, count))
         
-        self.merge_values()
+        if merge:
+            self.merge_values()
+    
+    def as_dict(self):
+        return {self.name : [v.as_dict() for v in self.values]}
 
 class DateFacetValue(FacetValue):
     """
@@ -210,4 +216,4 @@ class DateFacet(Facet):
     
     def create_value(self, value, count):
         return DateFacetValue(value, count, self.date_gap)
-        
+

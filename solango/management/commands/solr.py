@@ -108,7 +108,7 @@ Successfully created schema.xml in/at: %s
         if index_solr:
             from solango import Index
             index = Index()
-            if index.ping():
+            if not index.ping():
                 raise CommandError("Solr connection is not available")
             
             from solango.utils import reindex
