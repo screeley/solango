@@ -177,7 +177,7 @@ class QValue(MultiValue):
         name = self.name.replace("_", ".")
         if self.prefix:
             name = self.prefix + name
-        print self.operator
+
         operator = " %s " % self.operator
         return urllib.urlencode([(name, operator.join(["%s" % value
                           for value in self.data]))])
