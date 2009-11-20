@@ -24,7 +24,11 @@ class Index(object):
         self.update_url = update_url
         self.select_urls = select_urls
         self.ping_urls = ping_urls
-        
+    
+    def get_document(self, instance):
+        from solango import documents
+        return documents.get_document(instance)
+    
     @property
     def connection(self):
         """Lazy Init a Collection """
@@ -54,17 +58,20 @@ class Index(object):
     def optimize(self):
         return self.connection.optimize()
     
-    def add(self, doc):
-        return self.connection.add(doc.to_add_xml())
+    def commit(self):
+        return self.connection.commit()
     
-    def delete(self, doc):
-        return self.connection.delete(doc.to_delete_xml())
+    def add(self, doc, commit=True):
+        return self.connection.add(doc.to_add_xml(), commit)
     
-    def delete_all(self):
-        return self.connection.delete_all()
+    def delete(self, doc, commit=True):
+        return self.connection.delete(doc.to_delete_xml(), commit)
     
-    def delete_by_query(self, query):
-        return self.connection.delete_by_query(query)
+    def delete_all(self, commit=True):
+        return self.connection.delete_all(commit)
+    
+    def delete_by_query(self, query, commit=True):
+        return self.connection.delete_by_query(query, commit)
 
     def select(self, initial=None, **kwargs):
         if isinstance(initial, Query):
@@ -98,12 +105,14 @@ class Index(object):
             start = stop + 1
             stop = start + batch_size
 
-    def post_save(self, **kwargs):
-        pass
+    def post_save(self, sender, instance, **kwargs):
+        doc = documents.get_document(instance)
+        self.add(doc)
     
-    def post_delete(self, **kwargs):
-        pass
-    
+    def post_delete(self, sender, instance, **kwargs):
+        doc = documents.get_document(instance)
+        self.delete(doc)
+
     def defer(self, method, xml, doc_pk=None, error=None):
         defer.add(method, xml, doc_pk, error)
         
