@@ -48,7 +48,6 @@ class SearchView(object):
 
     def select(self, params):
         self.results = self.index.select(params)
-        print self.results.url
         return self.results
 
     def main(self, request, form_class=None, template=None, extra_context={}):
@@ -79,9 +78,9 @@ class SearchView(object):
                 query = self.index.query(params.items())
                 query.start = (page-1)*per_page
                 query.rows = per_page
-
-                results = self.select(query)
                 
+                results = self.select(query)
+
                 paginator = SearchPaginator(results, request, page, per_page)
                 
                 facets = utils.get_facets_links(request, paginator.results)

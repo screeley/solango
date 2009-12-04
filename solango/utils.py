@@ -3,6 +3,7 @@
 #
 import urllib, datetime
 from solango import conf
+import threading
 
 def get_base_url(request, exclude=[]):
     """
@@ -103,3 +104,41 @@ def reindex(batch_size=50):
     for model_key, document in solango.documents.items():
         model = solango.solr.get_model_from_key(model_key)
         document.index.reindex(model, document, batch_size=batch_size)
+
+
+class ReIndexThread(threading.Thread):
+    
+    def __init__(self, qs, batch_size, index, commit=False):
+        self.qs = qs
+        self.batch_size = batch_size
+        self.index = index
+        self.commit = commit
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        self.index().reindex_qs(self.qs,self.batch_size, self.commit)
+        print "DONE"
+
+   
+def quick_reindex(qs, batch_size=50, threads=4):
+    import solango
+    solango.autodiscover()
+    count = qs.count()
+    
+    batch = count/threads
+    
+    for i in range(threads):
+        start = i*batch
+        stop = (i+1)*batch
+        
+        if i is (threads-1):
+            stop = count
+
+        #We only want one thread to do the committing.
+        commit = False
+        if i == 1:
+            commit = True
+
+        t = ReIndexThread(qs[start:stop], batch_size, solango.Index, commit)
+        t.start()
+    

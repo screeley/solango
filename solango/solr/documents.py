@@ -250,13 +250,13 @@ class BaseSearchDocument(object):
             # that wasn't returned.
             if self.data_dict.has_key(field.get_name()):
                 field.value = self.data_dict[field.get_name()]
+                field.clean()
                 try:
-                    value = None
-                    value = getattr(self, 'clean_%s' % name, None)(field.value)
-                    field.value = value
+                    field.value = getattr(self, 'clean_%s' % name, None)(field.value)
                 except TypeError:
                     #no transform rely on the field
-                    field.clean()
+                    #field.clean()
+                    pass
             else:
                 # field not found in Solr's response,
                 # assume field was null when indexed

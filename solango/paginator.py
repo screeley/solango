@@ -37,7 +37,7 @@ class SearchPaginator(object):
         {% endif %}
     """
     
-    def __init__(self, results, request=None, page=1, per_page=5):
+    def __init__(self, results, request=None, page=0, per_page=25):
         self.page = int(page)
         self.per_page = int(per_page)
         self.results = results

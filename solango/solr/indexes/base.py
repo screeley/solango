@@ -10,20 +10,23 @@ class Index(object):
     Solr Index
     """
     name = "default_index"
-    update_url = ""
-    select_urls = ()
+    update_url = conf.SEARCH_UPDATE_URL
+    select_urls = conf.SEARCH_SELECT_URLS
+    ping_urls = conf.SEARCH_PING_URLS
     
     _connection = None
     
-    def __init__(self, name=None, update_url=conf.SEARCH_UPDATE_URL, 
-                 select_urls=conf.SEARCH_SELECT_URLS,
-                 ping_urls=conf.SEARCH_PING_URLS,):
+    def __init__(self, name=None, update_url=None, 
+                 select_urls=(), ping_urls=()):
         
         if name is not None:
             self.name = name
-        self.update_url = update_url
-        self.select_urls = select_urls
-        self.ping_urls = ping_urls
+        if update_url:
+            self.update_url = update_url
+        if select_urls:
+            self.select_urls = select_urls
+        if ping_urls:
+            self.ping_urls = ping_urls
     
     def get_document(self, instance):
         from solango import documents
@@ -89,7 +92,12 @@ class Index(object):
         while(1):
             qs = model._default_manager.all()[start:stop]
             for i in qs:
-                xml += doc(i).to_add_xml()
+                d = doc(i)
+                if d.is_indexable(i):
+                    xml += d.to_add_xml()
+                else:
+                    #Add will commit.
+                    self.delete(d, False)
             
             if not xml:
                 break
@@ -105,15 +113,46 @@ class Index(object):
             start = stop + 1
             stop = start + batch_size
 
+    def reindex_qs(self, queryset, batch_size=50, commit=True):
+        start = 0
+        stop = batch_size
+        xml = ""
+        
+        doc = self.get_document(queryset[0]).__class__
+        while(1):
+            qs = queryset[start:stop]
+            for i in qs:
+                d = doc(i)
+                if d.is_indexable(i):
+                    xml += d.to_add_xml()
+                else:
+                    #Add will commit.
+                    self.delete(d, False)
+            
+            if not xml:
+                break
+
+            results = self.connection.add(xml, commit)
+            
+            for result in results:
+                if not result.success:
+                    self.defer("add", result.xml, error=result.error)
+
+            xml = ""
+            
+            start = stop + 1
+            stop = start + batch_size
+        
+        
+        
+
     def post_save(self, sender, instance, **kwargs):
-        doc = documents.get_document(instance)
+        doc = self.get_document(instance)
         self.add(doc)
     
     def post_delete(self, sender, instance, **kwargs):
-        doc = documents.get_document(instance)
+        doc = self.get_document(instance)
         self.delete(doc)
 
     def defer(self, method, xml, doc_pk=None, error=None):
         defer.add(method, xml, doc_pk, error)
-        
-        

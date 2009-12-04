@@ -6,6 +6,7 @@
 Will handle the base wrapper.
 
 """
+import re
 
 from django.db.models.loading import get_model
 from django.forms.forms import DeclarativeFieldsMetaclass, BaseForm
@@ -24,7 +25,7 @@ def get_instance_key(instance):
         isinstance(instance.__class__, ModelBase):
         return u'%s%s%s' % (instance._meta.app_label, 
                             conf.SEARCH_SEPARATOR, 
-                            instance._meta.module_name)
+                            re.sub('\s', '', instance._meta.verbose_name.lower()))
     
     #Form
     elif isinstance(instance, DeclarativeFieldsMetaclass):

@@ -20,7 +20,7 @@ class SearchWrapper(object):
     """
     
     available = False
-    hearbeat = None
+    heartbeat = None
     
     def __init__(self, update_url, select_url, ping_urls):
         """
@@ -47,6 +47,7 @@ class SearchWrapper(object):
                 self.available = False
             else:
                 self.available = True
+                self.heartbeat = now
             
         return self.available
     
@@ -59,9 +60,6 @@ class SearchWrapper(object):
         
         if not xml:
             raise SolrException("No XML to Add")
-        
-        if not self.is_available():
-            return results.ErrorResults(method, self.update_url, xml, "Solr Unavailable")
         
         xml = xml.encode("utf-8", "replace")
         
@@ -82,9 +80,6 @@ class SearchWrapper(object):
         """
         Issues update requests
         """
-        
-        if not self.is_available():
-            raise SolrUnavailable("Unable to add documents to Solr")
         
         request = urllib2.Request(url)
         request.add_header("Content-type", "application/json; charset=utf-8")
@@ -124,14 +119,15 @@ class SearchWrapper(object):
 
     def delete_by_query(self, q, commit=True):
 
-        res = self.update(
+        results=[]
+        
+        results.append(self.update(
             unicode("\n<delete><query>%s</query></delete>\n" % q, "utf-8")
-        )
+        ))
         if commit:
-            ret = [results.UpdateResults(res), self.commit()]
-        else:
-            ret = [results.UpdateResults(res),]
-        return ret
+            results.append(self.commit())
+
+        return results
 
     def delete(self, xml, commit=True):
         """

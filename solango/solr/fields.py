@@ -279,7 +279,7 @@ class UrlField(CharField):
         """
         try:
             self.value = model.get_absolute_url()
-        except AttributeError:
+        except Exception:
             self.value = ""
         return unicode(self)
 

@@ -147,6 +147,8 @@ class SelectResults(Results):
         self.documents = []
         self.facets = [] 
         self.highlighting = {}
+
+        self._parse_header()
         
         self._parse_results()
         
@@ -155,8 +157,15 @@ class SelectResults(Results):
         self._parse_highlighting()
         
     def _parse_header(self):
-        self.rows = int(self.header['params']['rows'])
-        self.start = int(self.header['params']['start'])
+        try:
+            self.rows = int(self.header['params']['rows'])
+        except KeyError:
+            pass
+        
+        try:
+            self.start = int(self.header['params']['start'])
+        except KeyError:
+            pass
           
     def _parse_results(self):
         """
