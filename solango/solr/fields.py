@@ -241,7 +241,7 @@ class SolrTextField(Field):
 
 class IntegerField(Field):
     dynamic_suffix = "i"
-    type = "integer"
+    type = "int"
     
     def clean(self):
         if isinstance(self.value, list):
