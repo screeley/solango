@@ -118,7 +118,7 @@ Successfully created schema.xml in/at: %s
                 # Throws value errors.
                 index_batch_size = int(index_batch_size)
                 print "Starting to reindex Solr"
-                reindex(batch_size=index_batch_size, document_key=options.get('index_key'))
+                reindex(batch_size=index_batch_size, document_key=options.get('document_key'))
                 print "Finished the reindex of Solr"
             except ValueError, e:
                 raise CommandError("ERROR: Invalid --batch-size agrument ( %s ). exception: %s" % (str(index_batch_size), str(e)))
