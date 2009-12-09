@@ -24,8 +24,8 @@ class Command(NoArgsCommand):
             help='Prints out the fields the schema.xml will create'),
         make_option('--start', dest='start_solr', action='store_true', default=False,
             help='Start solr running java -jar start.jar'),
-        make_option('--index-queued', dest='index_queued', action='store_true', default=False,
-            help='Indexes all the documents in the index queue table, and truncates the table.'),
+        make_option('--document_key', dest='document_key', default=False,
+            help='reindex only the documents with that label.'),
     )
     args = ''
 
@@ -42,7 +42,6 @@ class Command(NoArgsCommand):
         flush_solr =options.get('flush_solr')
         solr_fields =options.get('solr_fields')
         start_solr = options.get('start_solr')
-        index_queued = options.get('index_queued')
         
         from solango import conf
         from solango import autodiscover
@@ -119,7 +118,7 @@ Successfully created schema.xml in/at: %s
                 # Throws value errors.
                 index_batch_size = int(index_batch_size)
                 print "Starting to reindex Solr"
-                reindex(batch_size = index_batch_size)
+                reindex(batch_size=index_batch_size, document_key=options.get('index_key'))
                 print "Finished the reindex of Solr"
             except ValueError, e:
                 raise CommandError("ERROR: Invalid --batch-size agrument ( %s ). exception: %s" % (str(index_batch_size), str(e)))
@@ -141,7 +140,3 @@ Successfully created schema.xml in/at: %s
                 # Throws nasty errors if we don't catch the keyboard interrupt.
                 pass
             print "Solr process has been interrupted"
-            
-        if index_queued:
-            from solango.indexing import indexer
-            indexer.index_queued()

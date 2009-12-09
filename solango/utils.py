@@ -99,11 +99,17 @@ def create_schema_xml(raw=False):
         return render_to_string('solango/schema.xml', {'fields': doc, "copy_fields"  : copy_doc, 'default_operator': SOLR_DEFAULT_OPERATOR})
 
 
-def reindex(batch_size=50):
+def reindex(batch_size=50, document_key=None):
     import solango
-    for model_key, document in solango.documents.items():
-        model = solango.solr.get_model_from_key(model_key)
+    
+    if document_key:
+        document = solango.documents.get(document_key)
+        model = solango.solr.get_model_from_key(document_key)
         document.index.reindex(model, document, batch_size=batch_size)
+    else:
+        for model_key, document in solango.documents.items():
+            model = solango.solr.get_model_from_key(model_key)
+            document.index.reindex(model, document, batch_size=batch_size)
 
 
 class ReIndexThread(threading.Thread):
@@ -141,4 +147,19 @@ def quick_reindex(qs, batch_size=50, threads=4):
 
         t = ReIndexThread(qs[start:stop], batch_size, solango.Index, commit)
         t.start()
-    
+
+def test_reindex():
+    import solango
+    solango.autodiscover()
+    for model_key, document in solango.documents.items():
+        print "Model ", model_key
+        print "Document ", document
+        model = solango.solr.get_model_from_key(model_key)
+        print "Count ", model._default_manager.count()
+        now = datetime.datetime.now()
+        for instance in model._default_manager.iterator():
+            doc = document(instance)
+            doc.to_add_xml()
+            
+        elapsed = datetime.datetime.now() - now
+        print "Elapsed Seconds ", elapsed.seconds

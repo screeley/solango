@@ -8,7 +8,7 @@ Will handle the base wrapper.
 """
 import re
 
-from django.db.models.loading import get_model
+from django.db.models import loading
 from django.forms.forms import DeclarativeFieldsMetaclass, BaseForm
 from django.db.models.base import ModelBase
 from solango import conf
@@ -46,4 +46,13 @@ def get_instance_key(instance):
 
 def get_model_from_key(type):
     app_label, module_name = type.split(conf.SEARCH_SEPARATOR)
-    return get_model(app_label, module_name)
+    model = loading.get_model(app_label, module_name)
+    if model:
+        return model
+    
+    app = loading.get_app(app_label)
+    for model in loading.get_models(app):
+        if model._meta.verbose_name == module_name:
+            return model
+
+    raise ValueError("Type: %s does not have a solango document" % type)
