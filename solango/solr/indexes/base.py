@@ -88,8 +88,11 @@ class Index(object):
         start = 0
         stop = batch_size
         xml = ""
-        
+        count = model._default_manager.count()
         while(1):
+            if stop >= count:
+                break
+            print model, start, stop
             qs = model._default_manager.all()[start:stop]
             for i in qs:
                 d = doc(i)
@@ -98,18 +101,16 @@ class Index(object):
                 else:
                     #Add will commit.
                     self.delete(d, False)
-            
-            if not xml:
-                break
-            
-            results = self.connection.add(xml)
-            
-            for result in results:
-                if not result.success:
-                    self.defer("add", result.xml, error=result.error)
+
+            if xml:
+                results = self.connection.add(xml)
+
+                for result in results:
+                    if not result.success:
+                        self.defer("add", result.xml, error=result.error)
 
             xml = ""
-            
+
             start = stop + 1
             stop = start + batch_size
 
@@ -117,9 +118,12 @@ class Index(object):
         start = 0
         stop = batch_size
         xml = ""
-        
+        count = queryset.count()
         doc = self.get_document(queryset[0]).__class__
         while(1):
+            if stop>= count:
+                break
+            
             qs = queryset[start:stop]
             for i in qs:
                 d = doc(i)
@@ -129,14 +133,12 @@ class Index(object):
                     #Add will commit.
                     self.delete(d, False)
             
-            if not xml:
-                break
-
-            results = self.connection.add(xml, commit)
-            
-            for result in results:
-                if not result.success:
-                    self.defer("add", result.xml, error=result.error)
+            if xml:
+                results = self.connection.add(xml, commit)
+                
+                for result in results:
+                    if not result.success:
+                        self.defer("add", result.xml, error=result.error)
 
             xml = ""
             
